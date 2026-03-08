@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color(0xFF1E3A5F),
+      backgroundColor: const Color.fromARGB(255, 9, 172, 131),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),
@@ -52,7 +52,11 @@ class _LoginScreenState extends State<LoginScreen> {
             mainAxisAlignment: MainAxisAlignment.center,
             crossAxisAlignment: CrossAxisAlignment.stretch,
             children: [
-              const Icon(Icons.electric_car, size: 80, color: Colors.white),
+              Image.asset(
+                'assets/images/logo.png',
+                height: 150,
+                width: 150,
+              ),
               const SizedBox(height: 16),
               const Text(
                 'PowerShare SL',
