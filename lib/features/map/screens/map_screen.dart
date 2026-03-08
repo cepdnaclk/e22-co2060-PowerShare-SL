@@ -5,6 +5,7 @@ import '../../../services/auth_service.dart';
 import '../../../services/location_service.dart';
 import '../../../models/charger_model.dart';
 import '../../auth/screens/login_screen.dart';
+import '../../booking/screens/booking_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -225,17 +226,17 @@ class _MapScreenState extends State<MapScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _selectedCharger!.isAvailable
-                              ? () {
-                                  ScaffoldMessenger.of(context).showSnackBar(
-                                    SnackBar(
-                                      content: Text(
-                                          'Booking ${_selectedCharger!.name} — Coming in Phase 3!'),
-                                      backgroundColor:
-                                          const Color(0xFF1E3A5F),
+                            ? () {
+                                Navigator.push(
+                                  context,
+                                  MaterialPageRoute(
+                                    builder: (_) => BookingScreen(
+                                      charger: _selectedCharger!,
                                     ),
-                                  );
-                                }
-                              : null,
+                                  ),
+                                );
+                              }
+                            : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E3A5F),
                             foregroundColor: Colors.white,
