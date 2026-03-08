@@ -44,6 +44,14 @@
       },
       "oauth_client": [
         {
+          "client_id": "8309789303-8qn2sudhtvu1ded4dcp52vrt3nimuiin.apps.googleusercontent.com",
+          "client_type": 1,
+          "android_info": {
+            "package_name": "com.example.powershare_sl",
+            "certificate_hash": "e787414f31dd209174ce8a0398ecd8fd43b70bb6"
+          }
+        },
+        {
           "client_id": "8309789303-cmq0g1tquo3t15ke642i2hvuq19kliog.apps.googleusercontent.com",
           "client_type": 3
         }

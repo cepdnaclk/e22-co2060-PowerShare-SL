@@ -11,9 +11,7 @@ plugins {
 android {
     namespace = "com.example.powershare_sl"
     compileSdk = flutter.compileSdkVersion
-    ndkVersion = flutter.ndkVersion
     ndkVersion = "26.3.11579264"
-    ndkVersion = "26.3.11579264" 
     compileOptions {
         sourceCompatibility = JavaVersion.VERSION_11
         targetCompatibility = JavaVersion.VERSION_11
