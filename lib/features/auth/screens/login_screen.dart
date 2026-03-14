@@ -16,20 +16,20 @@ class _LoginScreenState extends State<LoginScreen> {
   Future<void> _signInWithGoogle() async {
     setState(() => _isLoading = true);
 
-    final result = await _authService.signInWithGoogle();
+    final account = await _authService.signInWithGoogle();
 
     setState(() => _isLoading = false);
 
-    if (result != null && mounted) {
+    if (account != null && mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
         SnackBar(
-          content: Text('Welcome ${result.user?.displayName ?? "User"}! 🎉'),
+          content: Text('Welcome ${account.displayName ?? "User"}! 🎉'),
           backgroundColor: Colors.green,
         ),
       );
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const MapScreen()),
+        MaterialPageRoute(builder: (_) => const MapScreen()),
       );
     } else if (mounted) {
       ScaffoldMessenger.of(context).showSnackBar(
@@ -44,7 +44,7 @@ class _LoginScreenState extends State<LoginScreen> {
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      backgroundColor: const Color.fromARGB(255, 9, 172, 131),
+      backgroundColor: const Color(0xFF1E3A5F),
       body: SafeArea(
         child: Padding(
           padding: const EdgeInsets.all(24.0),

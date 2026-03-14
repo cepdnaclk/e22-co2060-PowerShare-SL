@@ -4,7 +4,6 @@ import 'confirmation_screen.dart';
 
 class BookingScreen extends StatefulWidget {
   final ChargerModel charger;
-
   const BookingScreen({super.key, required this.charger});
 
   @override
@@ -49,12 +48,10 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            // Charger Info Card
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
@@ -69,30 +66,27 @@ class _BookingScreenState extends State<BookingScreen> {
                           child: Text(
                             widget.charger.name,
                             style: const TextStyle(
-                              fontSize: 18,
-                              fontWeight: FontWeight.bold,
-                            ),
+                                fontSize: 18,
+                                fontWeight: FontWeight.bold),
                           ),
                         ),
                       ],
                     ),
                     const SizedBox(height: 8),
-                    Text(
-                      widget.charger.address,
-                      style: const TextStyle(color: Colors.grey),
-                    ),
+                    Text(widget.charger.address,
+                        style: const TextStyle(color: Colors.grey)),
                     const SizedBox(height: 8),
                     Row(
                       children: [
-                        const Icon(Icons.star, color: Colors.amber, size: 16),
+                        const Icon(Icons.star,
+                            color: Colors.amber, size: 16),
                         Text(' ${widget.charger.rating}'),
                         const SizedBox(width: 16),
                         Text(
                           'Rs. ${widget.charger.pricePerHour.toInt()}/hr',
                           style: const TextStyle(
-                            fontWeight: FontWeight.bold,
-                            color: Color(0xFF1E3A5F),
-                          ),
+                              fontWeight: FontWeight.bold,
+                              color: Color(0xFF1E3A5F)),
                         ),
                       ],
                     ),
@@ -100,14 +94,10 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Date Picker
-            const Text(
-              'Select Date',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            const Text('Select Date',
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickDate,
@@ -130,14 +120,10 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Time Picker
-            const Text(
-              'Select Time',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            const Text('Select Time',
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickTime,
@@ -160,14 +146,10 @@ class _BookingScreenState extends State<BookingScreen> {
                 ),
               ),
             ),
-
             const SizedBox(height: 16),
-
-            // Duration Selector
-            const Text(
-              'Duration (Hours)',
-              style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold),
-            ),
+            const Text('Duration (Hours)',
+                style: TextStyle(
+                    fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(8),
@@ -188,9 +170,7 @@ class _BookingScreenState extends State<BookingScreen> {
                   Text(
                     '$_durationHours hr${_durationHours > 1 ? 's' : ''}',
                     style: const TextStyle(
-                      fontSize: 20,
-                      fontWeight: FontWeight.bold,
-                    ),
+                        fontSize: 20, fontWeight: FontWeight.bold),
                   ),
                   IconButton(
                     onPressed: _durationHours < 8
@@ -202,10 +182,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Price Summary
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
@@ -218,7 +195,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Rate'),
-                      Text('Rs. ${widget.charger.pricePerHour.toInt()}/hr'),
+                      Text(
+                          'Rs. ${widget.charger.pricePerHour.toInt()}/hr'),
                     ],
                   ),
                   const SizedBox(height: 8),
@@ -226,17 +204,17 @@ class _BookingScreenState extends State<BookingScreen> {
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
                       const Text('Duration'),
-                      Text('$_durationHours hour${_durationHours > 1 ? 's' : ''}'),
+                      Text(
+                          '$_durationHours hour${_durationHours > 1 ? 's' : ''}'),
                     ],
                   ),
                   const Divider(),
                   Row(
                     mainAxisAlignment: MainAxisAlignment.spaceBetween,
                     children: [
-                      const Text(
-                        'Total',
-                        style: TextStyle(fontWeight: FontWeight.bold),
-                      ),
+                      const Text('Total',
+                          style:
+                              TextStyle(fontWeight: FontWeight.bold)),
                       Text(
                         'Rs. ${_totalPrice.toInt()}',
                         style: const TextStyle(
@@ -250,10 +228,7 @@ class _BookingScreenState extends State<BookingScreen> {
                 ],
               ),
             ),
-
             const SizedBox(height: 24),
-
-            // Confirm Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -279,10 +254,8 @@ class _BookingScreenState extends State<BookingScreen> {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Proceed to Confirm',
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text('Proceed to Confirm',
+                    style: TextStyle(fontSize: 16)),
               ),
             ),
           ],

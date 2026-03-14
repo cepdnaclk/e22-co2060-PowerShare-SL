@@ -22,7 +22,6 @@ class ChargerModel {
   });
 }
 
-// Sample Sri Lanka EV Charger Data
 final List<ChargerModel> sampleChargers = [
   ChargerModel(
     id: '1',

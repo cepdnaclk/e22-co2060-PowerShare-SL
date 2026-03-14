@@ -1,9 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
-import '../../../services/auth_service.dart';
-import '../../../services/location_service.dart';
+import 'package:geolocator/geolocator.dart';
 import '../../../models/charger_model.dart';
+import '../../../services/auth_service.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../booking/screens/booking_screen.dart';
 
@@ -16,31 +16,42 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
-  final LocationService _locationService = LocationService();
-  LatLng _currentLocation = const LatLng(6.9271, 79.8612); // Default: Colombo
+  LatLng _currentLocation = const LatLng(6.9271, 79.8612);
   ChargerModel? _selectedCharger;
   bool _isLoadingLocation = false;
+  String _userName = '';
 
   @override
   void initState() {
     super.initState();
+    _loadUserInfo();
     _getUserLocation();
+  }
+
+  Future<void> _loadUserInfo() async {
+    final info = await AuthService().getUserInfo();
+    setState(() => _userName = info['name'] ?? '');
   }
 
   Future<void> _getUserLocation() async {
     setState(() => _isLoadingLocation = true);
-
-    final location = await _locationService.getCurrentLocation();
-
-    if (location != null && mounted) {
-      setState(() {
-        _currentLocation = location;
-        _isLoadingLocation = false;
-      });
-      _mapController.move(location, 13.0);
-    } else {
-      setState(() => _isLoadingLocation = false);
+    try {
+      LocationPermission permission = await Geolocator.checkPermission();
+      if (permission == LocationPermission.denied) {
+        permission = await Geolocator.requestPermission();
+      }
+      if (permission == LocationPermission.whileInUse ||
+          permission == LocationPermission.always) {
+        final position = await Geolocator.getCurrentPosition();
+        setState(() {
+          _currentLocation = LatLng(position.latitude, position.longitude);
+        });
+        _mapController.move(_currentLocation, 13.0);
+      }
+    } catch (e) {
+      debugPrint('Location error: $e');
     }
+    setState(() => _isLoadingLocation = false);
   }
 
   @override
@@ -63,6 +74,16 @@ class _MapScreenState extends State<MapScreen> {
                 ),
               ),
             ),
+          if (_userName.isNotEmpty)
+            Padding(
+              padding: const EdgeInsets.symmetric(horizontal: 8),
+              child: Center(
+                child: Text(
+                  _userName.split(' ').first,
+                  style: const TextStyle(color: Colors.white70),
+                ),
+              ),
+            ),
           IconButton(
             icon: const Icon(Icons.logout),
             onPressed: () async {
@@ -79,7 +100,6 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
-          // Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
@@ -88,16 +108,13 @@ class _MapScreenState extends State<MapScreen> {
               onTap: (_, __) => setState(() => _selectedCharger = null),
             ),
             children: [
-              // OpenStreetMap Tile Layer
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.powershare_sl',
               ),
-
-              // Charger Markers
               MarkerLayer(
                 markers: [
-                  // Current Location Marker
                   Marker(
                     point: _currentLocation,
                     width: 40,
@@ -108,8 +125,6 @@ class _MapScreenState extends State<MapScreen> {
                       size: 35,
                     ),
                   ),
-
-                  // Charger Markers
                   ...sampleChargers.map(
                     (charger) => Marker(
                       point: LatLng(charger.latitude, charger.longitude),
@@ -132,8 +147,6 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
-
-          // Charger Info Card (bottom popup)
           if (_selectedCharger != null)
             Positioned(
               bottom: 20,
@@ -226,17 +239,17 @@ class _MapScreenState extends State<MapScreen> {
                         width: double.infinity,
                         child: ElevatedButton(
                           onPressed: _selectedCharger!.isAvailable
-                            ? () {
-                                Navigator.push(
-                                  context,
-                                  MaterialPageRoute(
-                                    builder: (_) => BookingScreen(
-                                      charger: _selectedCharger!,
+                              ? () {
+                                  Navigator.push(
+                                    context,
+                                    MaterialPageRoute(
+                                      builder: (_) => BookingScreen(
+                                        charger: _selectedCharger!,
+                                      ),
                                     ),
-                                  ),
-                                );
-                              }
-                            : null,
+                                  );
+                                }
+                              : null,
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E3A5F),
                             foregroundColor: Colors.white,
@@ -254,8 +267,6 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
-
-      // My Location FAB
       floatingActionButton: FloatingActionButton(
         onPressed: _getUserLocation,
         backgroundColor: const Color(0xFF1E3A5F),

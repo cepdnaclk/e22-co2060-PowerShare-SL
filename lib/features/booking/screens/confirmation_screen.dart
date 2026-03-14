@@ -30,35 +30,27 @@ class ConfirmationScreen extends StatelessWidget {
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            // Success Icon
-            const Icon(
-              Icons.check_circle_outline,
-              size: 80,
-              color: Colors.green,
-            ),
+            const Icon(Icons.check_circle_outline,
+                size: 80, color: Colors.green),
             const SizedBox(height: 16),
             const Text(
               'Booking Summary',
-              style: TextStyle(
-                fontSize: 24,
-                fontWeight: FontWeight.bold,
-              ),
+              style:
+                  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
-
-            // Booking Details Card
             Card(
               elevation: 4,
               shape: RoundedRectangleBorder(
-                borderRadius: BorderRadius.circular(12),
-              ),
+                  borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
                     _buildRow(Icons.ev_station, 'Charger', charger.name),
                     const Divider(),
-                    _buildRow(Icons.location_on, 'Location', charger.address),
+                    _buildRow(
+                        Icons.location_on, 'Location', charger.address),
                     const Divider(),
                     _buildRow(Icons.person, 'Owner', charger.ownerName),
                     const Divider(),
@@ -69,10 +61,7 @@ class ConfirmationScreen extends StatelessWidget {
                     ),
                     const Divider(),
                     _buildRow(
-                      Icons.access_time,
-                      'Time',
-                      time.format(context),
-                    ),
+                        Icons.access_time, 'Time', time.format(context)),
                     const Divider(),
                     _buildRow(
                       Icons.timer,
@@ -90,10 +79,7 @@ class ConfirmationScreen extends StatelessWidget {
                 ),
               ),
             ),
-
             const Spacer(),
-
-            // Confirm Button
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
@@ -103,7 +89,7 @@ class ConfirmationScreen extends StatelessWidget {
                     builder: (_) => AlertDialog(
                       title: const Text('Booking Confirmed! 🎉'),
                       content: Text(
-                        'Your booking at ${charger.name} has been confirmed!\n\nDate: ${date.day}/${date.month}/${date.year}\nTime: ${time.format(context)}\nDuration: $durationHours hr\nTotal: Rs. ${totalPrice.toInt()}',
+                        'Your booking at ${charger.name} is confirmed!\n\nDate: ${date.day}/${date.month}/${date.year}\nTime: ${time.format(context)}\nDuration: $durationHours hr\nTotal: Rs. ${totalPrice.toInt()}',
                       ),
                       actions: [
                         TextButton(
@@ -129,15 +115,11 @@ class ConfirmationScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text(
-                  'Confirm Booking',
-                  style: TextStyle(fontSize: 16),
-                ),
+                child: const Text('Confirm Booking',
+                    style: TextStyle(fontSize: 16)),
               ),
             ),
-            const SizedBox(height: 16),
-
-            // Cancel Button
+            const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
@@ -170,7 +152,8 @@ class ConfirmationScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+              fontWeight:
+                  isTotal ? FontWeight.bold : FontWeight.normal,
               fontSize: isTotal ? 16 : 14,
               color: isTotal ? const Color(0xFF1E3A5F) : Colors.black,
             ),
