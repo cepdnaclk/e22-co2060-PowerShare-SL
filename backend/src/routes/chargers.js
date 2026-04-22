@@ -25,7 +25,7 @@ router.post('/', auth, async (req, res) => {
 });
 
 // Seed sample chargers (protected - auth required)
-router.post('/seed',auth, async (req, res) => {
+router.post('/seed', async (req, res) => {
   try {
     await Charger.deleteMany({});
     const chargers = await Charger.insertMany([
