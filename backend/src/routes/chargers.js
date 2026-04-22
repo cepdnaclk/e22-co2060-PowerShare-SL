@@ -14,7 +14,7 @@ router.get('/', async (req, res) => {
 });
 
 // Add charger (protected)
-router.post('/', auth, async (req, res) => {
+router.post('/', async (req, res) => {
   try {
     const charger = new Charger(req.body);
     await charger.save();
