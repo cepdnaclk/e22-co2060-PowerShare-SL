@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
 import '../../../models/charger_model.dart';
+import '../../../services/api_service.dart';
 import '../../map/screens/map_screen.dart';
 
-class ConfirmationScreen extends StatelessWidget {
+class ConfirmationScreen extends StatefulWidget {
   final ChargerModel charger;
   final DateTime date;
   final TimeOfDay time;
@@ -19,24 +20,110 @@ class ConfirmationScreen extends StatelessWidget {
   });
 
   @override
+  State<ConfirmationScreen> createState() => _ConfirmationScreenState();
+}
+
+class _ConfirmationScreenState extends State<ConfirmationScreen> {
+  bool _isBooking = false;
+
+  // ✅ FIX: Database-ට booking save කිරීම
+  Future<void> _confirmBooking() async {
+    setState(() => _isBooking = true);
+
+    final dateStr =
+        '${widget.date.day}/${widget.date.month}/${widget.date.year}';
+    final timeStr = widget.time.format(context);
+
+    final result = await ApiService.createBooking(
+      chargerId: widget.charger.id,
+      chargerName: widget.charger.name,
+      chargerAddress: widget.charger.address,
+      date: dateStr,
+      time: timeStr,
+      durationHours: widget.durationHours,
+      totalPrice: widget.totalPrice,
+    );
+
+    setState(() => _isBooking = false);
+
+    if (!mounted) return;
+
+    if (result['success'] == true) {
+      // ✅ Success dialog
+      showDialog(
+        context: context,
+        barrierDismissible: false,
+        builder: (_) => AlertDialog(
+          title: const Row(
+            children: [
+              Icon(Icons.check_circle, color: Colors.green, size: 28),
+              SizedBox(width: 8),
+              Text('Booking Confirmed!'),
+            ],
+          ),
+          content: Text(
+            'ඔබේ booking confirm වුණා!\n\n'
+            '📍 ${widget.charger.name}\n'
+            '📅 $dateStr\n'
+            '🕐 $timeStr\n'
+            '⏱ ${widget.durationHours} hour${widget.durationHours > 1 ? 's' : ''}\n'
+            '💰 Rs. ${widget.totalPrice.toInt()}',
+          ),
+          actions: [
+            ElevatedButton(
+              onPressed: () {
+                Navigator.pushAndRemoveUntil(
+                  context,
+                  MaterialPageRoute(builder: (_) => const MapScreen()),
+                  (route) => false,
+                );
+              },
+              style: ElevatedButton.styleFrom(
+                backgroundColor: const Color(0xFF1E3A5F),
+                foregroundColor: Colors.white,
+              ),
+              child: const Text('Back to Map'),
+            ),
+          ],
+        ),
+      );
+    } else {
+      // ❌ Error snackbar
+      ScaffoldMessenger.of(context).showSnackBar(
+        SnackBar(
+          content: Text(result['message'] ?? 'Booking failed. Try again.'),
+          backgroundColor: Colors.red,
+          action: SnackBarAction(
+            label: 'Retry',
+            textColor: Colors.white,
+            onPressed: _confirmBooking,
+          ),
+        ),
+      );
+    }
+  }
+
+  @override
   Widget build(BuildContext context) {
+    final dateStr =
+        '${widget.date.day}/${widget.date.month}/${widget.date.year}';
+    final timeStr = widget.time.format(context);
+
     return Scaffold(
       appBar: AppBar(
         title: const Text('Confirm Booking'),
         backgroundColor: const Color(0xFF1E3A5F),
         foregroundColor: Colors.white,
       ),
-      body: Padding(
+      body: SingleChildScrollView(
         padding: const EdgeInsets.all(16),
         child: Column(
           children: [
-            const Icon(Icons.check_circle_outline,
-                size: 80, color: Colors.green),
+            const Icon(Icons.check_circle_outline, size: 80, color: Colors.green),
             const SizedBox(height: 16),
             const Text(
               'Booking Summary',
-              style:
-                  TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
+              style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
             ),
             const SizedBox(height: 24),
             Card(
@@ -47,66 +134,38 @@ class ConfirmationScreen extends StatelessWidget {
                 padding: const EdgeInsets.all(16),
                 child: Column(
                   children: [
-                    _buildRow(Icons.ev_station, 'Charger', charger.name),
+                    _buildRow(Icons.ev_station, 'Charger', widget.charger.name),
                     const Divider(),
-                    _buildRow(
-                        Icons.location_on, 'Location', charger.address),
+                    _buildRow(Icons.location_on, 'Location', widget.charger.address),
                     const Divider(),
-                    _buildRow(Icons.person, 'Owner', charger.ownerName),
+                    _buildRow(Icons.person, 'Owner', widget.charger.ownerName),
                     const Divider(),
-                    _buildRow(
-                      Icons.calendar_today,
-                      'Date',
-                      '${date.day}/${date.month}/${date.year}',
-                    ),
+                    _buildRow(Icons.calendar_today, 'Date', dateStr),
                     const Divider(),
-                    _buildRow(
-                        Icons.access_time, 'Time', time.format(context)),
+                    _buildRow(Icons.access_time, 'Time', timeStr),
                     const Divider(),
                     _buildRow(
                       Icons.timer,
                       'Duration',
-                      '$durationHours hour${durationHours > 1 ? 's' : ''}',
+                      '${widget.durationHours} hour${widget.durationHours > 1 ? 's' : ''}',
                     ),
                     const Divider(),
                     _buildRow(
                       Icons.payment,
                       'Total',
-                      'Rs. ${totalPrice.toInt()}',
+                      'Rs. ${widget.totalPrice.toInt()}',
                       isTotal: true,
                     ),
                   ],
                 ),
               ),
             ),
-            const Spacer(),
+          
+            // ✅ FIX: Confirm button → API call
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  showDialog(
-                    context: context,
-                    builder: (_) => AlertDialog(
-                      title: const Text('Booking Confirmed! 🎉'),
-                      content: Text(
-                        'Your booking at ${charger.name} is confirmed!\n\nDate: ${date.day}/${date.month}/${date.year}\nTime: ${time.format(context)}\nDuration: $durationHours hr\nTotal: Rs. ${totalPrice.toInt()}',
-                      ),
-                      actions: [
-                        TextButton(
-                          onPressed: () {
-                            Navigator.pushAndRemoveUntil(
-                              context,
-                              MaterialPageRoute(
-                                  builder: (_) => const MapScreen()),
-                              (route) => false,
-                            );
-                          },
-                          child: const Text('Back to Map'),
-                        ),
-                      ],
-                    ),
-                  );
-                },
+                onPressed: _isBooking ? null : _confirmBooking,
                 style: ElevatedButton.styleFrom(
                   backgroundColor: Colors.green,
                   foregroundColor: Colors.white,
@@ -115,15 +174,23 @@ class ConfirmationScreen extends StatelessWidget {
                     borderRadius: BorderRadius.circular(12),
                   ),
                 ),
-                child: const Text('Confirm Booking',
-                    style: TextStyle(fontSize: 16)),
+                child: _isBooking
+                    ? const SizedBox(
+                        height: 22,
+                        width: 22,
+                        child: CircularProgressIndicator(
+                          color: Colors.white,
+                          strokeWidth: 2,
+                        ),
+                      )
+                    : const Text('Confirm Booking', style: TextStyle(fontSize: 16)),
               ),
             ),
             const SizedBox(height: 12),
             SizedBox(
               width: double.infinity,
               child: OutlinedButton(
-                onPressed: () => Navigator.pop(context),
+                onPressed: _isBooking ? null : () => Navigator.pop(context),
                 style: OutlinedButton.styleFrom(
                   padding: const EdgeInsets.symmetric(vertical: 16),
                   shape: RoundedRectangleBorder(
@@ -152,8 +219,7 @@ class ConfirmationScreen extends StatelessWidget {
           Text(
             value,
             style: TextStyle(
-              fontWeight:
-                  isTotal ? FontWeight.bold : FontWeight.normal,
+              fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
               fontSize: isTotal ? 16 : 14,
               color: isTotal ? const Color(0xFF1E3A5F) : Colors.black,
             ),

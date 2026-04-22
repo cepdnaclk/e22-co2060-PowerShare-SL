@@ -24,8 +24,8 @@ router.post('/', auth, async (req, res) => {
   }
 });
 
-// Seed sample chargers
-router.post('/seed', async (req, res) => {
+// Seed sample chargers (protected - auth required)
+router.post('/seed',auth, async (req, res) => {
   try {
     await Charger.deleteMany({});
     const chargers = await Charger.insertMany([
@@ -73,6 +73,16 @@ router.post('/seed', async (req, res) => {
         name: 'Nugegoda Charger',
         address: 'High Level Road, Nugegoda',
         latitude: 6.8728,
+        longitude: 79.8997,
+        pricePerHour: 230,
+        isAvailable: true,
+        ownerName: 'Ruwan Dissanayake',
+        rating: 4.3,
+      },
+      {
+        name: 'New charger',
+        address: 'my charger',
+        latitude: 7.8728,
         longitude: 79.8997,
         pricePerHour: 230,
         isAvailable: true,

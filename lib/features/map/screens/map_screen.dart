@@ -4,8 +4,11 @@ import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
 import '../../../models/charger_model.dart';
 import '../../../services/auth_service.dart';
+import '../../../services/api_service.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../booking/screens/booking_screen.dart';
+import '../../host/screens/add_charger_screen.dart';
+import '../../booking/screens/my_bookings_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -16,9 +19,15 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
-  LatLng _currentLocation = const LatLng(6.9271, 79.8612);
+  LatLng _currentLocation = const LatLng(6.9271, 79.8612); // Colombo default
   ChargerModel? _selectedCharger;
   bool _isLoadingLocation = false;
+
+  // ✅ FIX: hardcoded list → API list
+  List<ChargerModel> _chargers = [];
+  bool _isLoadingChargers = false;
+  String? _chargerError;
+
   String _userName = '';
 
   @override
@@ -26,6 +35,7 @@ class _MapScreenState extends State<MapScreen> {
     super.initState();
     _loadUserInfo();
     _getUserLocation();
+    _fetchChargers(); // ✅ Backend-ගෙන් chargers load
   }
 
   Future<void> _loadUserInfo() async {
@@ -54,6 +64,25 @@ class _MapScreenState extends State<MapScreen> {
     setState(() => _isLoadingLocation = false);
   }
 
+  // ✅ FIX: Backend API-ගෙන් chargers ලබා ගැනීම
+  Future<void> _fetchChargers() async {
+    setState(() {
+      _isLoadingChargers = true;
+      _chargerError = null;
+    });
+
+    final chargers = await ApiService.getChargers();
+
+    setState(() {
+      _isLoadingChargers = false;
+      if (chargers.isNotEmpty) {
+        _chargers = chargers;
+      } else {
+        _chargerError = 'Chargers load කරන්න බැරි වුණා. Retry කරන්න.';
+      }
+    });
+  }
+
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -62,7 +91,7 @@ class _MapScreenState extends State<MapScreen> {
         backgroundColor: const Color(0xFF1E3A5F),
         foregroundColor: Colors.white,
         actions: [
-          if (_isLoadingLocation)
+          if (_isLoadingLocation || _isLoadingChargers)
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: SizedBox(
@@ -85,7 +114,18 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ),
           IconButton(
+            icon: const Icon(Icons.receipt_long),
+            tooltip: 'My Bookings',
+            onPressed: () {
+              Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
+              );
+            },
+          ),
+          IconButton(
             icon: const Icon(Icons.logout),
+            tooltip: 'Logout',
             onPressed: () async {
               await AuthService().signOut();
               if (context.mounted) {
@@ -109,12 +149,12 @@ class _MapScreenState extends State<MapScreen> {
             ),
             children: [
               TileLayer(
-                urlTemplate:
-                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.powershare_sl',
               ),
               MarkerLayer(
                 markers: [
+                  // User location marker
                   Marker(
                     point: _currentLocation,
                     width: 40,
@@ -125,19 +165,17 @@ class _MapScreenState extends State<MapScreen> {
                       size: 35,
                     ),
                   ),
-                  ...sampleChargers.map(
+                  // ✅ FIX: API chargers map markers
+                  ..._chargers.map(
                     (charger) => Marker(
                       point: LatLng(charger.latitude, charger.longitude),
                       width: 40,
                       height: 40,
                       child: GestureDetector(
-                        onTap: () =>
-                            setState(() => _selectedCharger = charger),
+                        onTap: () => setState(() => _selectedCharger = charger),
                         child: Icon(
                           Icons.ev_station,
-                          color: charger.isAvailable
-                              ? Colors.green
-                              : Colors.red,
+                          color: charger.isAvailable ? Colors.green : Colors.red,
                           size: 35,
                         ),
                       ),
@@ -147,6 +185,39 @@ class _MapScreenState extends State<MapScreen> {
               ),
             ],
           ),
+
+          // ✅ Error banner
+          if (_chargerError != null)
+            Positioned(
+              top: 10,
+              left: 16,
+              right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(
+                        _chargerError!,
+                        style: const TextStyle(color: Colors.white, fontSize: 13),
+                      ),
+                    ),
+                    TextButton(
+                      onPressed: _fetchChargers,
+                      child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+
+          // Charger info card
           if (_selectedCharger != null)
             Positioned(
               bottom: 20,
@@ -192,9 +263,7 @@ class _MapScreenState extends State<MapScreen> {
                               borderRadius: BorderRadius.circular(8),
                             ),
                             child: Text(
-                              _selectedCharger!.isAvailable
-                                  ? 'Available'
-                                  : 'Busy',
+                              _selectedCharger!.isAvailable ? 'Available' : 'Busy',
                               style: const TextStyle(
                                 color: Colors.white,
                                 fontSize: 12,
@@ -206,8 +275,7 @@ class _MapScreenState extends State<MapScreen> {
                       const SizedBox(height: 8),
                       Text(
                         _selectedCharger!.address,
-                        style: const TextStyle(
-                            color: Colors.grey, fontSize: 13),
+                        style: const TextStyle(color: Colors.grey, fontSize: 13),
                       ),
                       const SizedBox(height: 8),
                       Row(
@@ -215,12 +283,10 @@ class _MapScreenState extends State<MapScreen> {
                         children: [
                           Row(
                             children: [
-                              const Icon(Icons.star,
-                                  color: Colors.amber, size: 16),
+                              const Icon(Icons.star, color: Colors.amber, size: 16),
                               Text(' ${_selectedCharger!.rating}'),
                               const SizedBox(width: 16),
-                              const Icon(Icons.person,
-                                  color: Colors.grey, size: 16),
+                              const Icon(Icons.person, color: Colors.grey, size: 16),
                               Text(' ${_selectedCharger!.ownerName}'),
                             ],
                           ),
@@ -267,10 +333,31 @@ class _MapScreenState extends State<MapScreen> {
             ),
         ],
       ),
-      floatingActionButton: FloatingActionButton(
-        onPressed: _getUserLocation,
-        backgroundColor: const Color(0xFF1E3A5F),
-        child: const Icon(Icons.my_location, color: Colors.white),
+      floatingActionButton: Column(
+        mainAxisAlignment: MainAxisAlignment.end,
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          FloatingActionButton.extended(
+            heroTag: 'add_charger',
+            onPressed: () async {
+              final added = await Navigator.push(
+                context,
+                MaterialPageRoute(builder: (_) => const AddChargerScreen()),
+              );
+              if (added == true) _fetchChargers();
+            },
+            backgroundColor: Colors.green,
+            icon: const Icon(Icons.add, color: Colors.white),
+            label: const Text('Add Charger', style: TextStyle(color: Colors.white)),
+          ),
+          const SizedBox(height: 12),
+          FloatingActionButton(
+            heroTag: 'my_location',
+            onPressed: _getUserLocation,
+            backgroundColor: const Color(0xFF1E3A5F),
+            child: const Icon(Icons.my_location, color: Colors.white),
+          ),
+        ],
       ),
     );
   }
