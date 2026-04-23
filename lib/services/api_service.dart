@@ -6,7 +6,7 @@ import '../models/charger_model.dart';
 class ApiService {
   // ✅ Local development: 10.0.2.2 = Android emulator-ගෙන් localhost
   // ✅ Real device/deployed: ඔබේ server URL දාන්න
-  static const String baseUrl = 'http://172.20.10.2:3000';
+  static const String baseUrl = 'http://10.0.2.2:3000';
 
   // ─── JWT Token helpers ───────────────────────────────────────────
   static Future<String?> _getToken() async {
@@ -82,6 +82,68 @@ class ApiService {
     } catch (e) {
       return [];
     }
+  }
+
+
+  // ─── Host — My Chargers ──────────────────────────────────────────
+
+  static Future<List<ChargerModel>> getMyChargers() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/chargers/my'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) {
+          final List list = data['chargers'];
+          return list.map((c) => ChargerModel.fromJson(c)).toList();
+        }
+      }
+      return [];
+    } catch (e) { return []; }
+  }
+
+  static Future<Map<String, dynamic>> toggleChargerAvailability(String id) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/api/chargers/$id/availability'),
+        headers: await _authHeaders(),
+      );
+      final data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  static Future<Map<String, dynamic>> deleteCharger(String id) async {
+    try {
+      final response = await http.delete(
+        Uri.parse('$baseUrl/api/chargers/$id'),
+        headers: await _authHeaders(),
+      );
+      final data = jsonDecode(response.body);
+      return data;
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // ─── Host — Received Bookings ─────────────────────────────────────
+
+  static Future<List<dynamic>> getReceivedBookings() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/bookings/received'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) return data['bookings'];
+      }
+      return [];
+    } catch (e) { return []; }
   }
 
   // ─── Add Charger (Host) ──────────────────────────────────────────

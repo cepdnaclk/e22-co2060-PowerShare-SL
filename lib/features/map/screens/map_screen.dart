@@ -9,6 +9,7 @@ import '../../auth/screens/login_screen.dart';
 import '../../booking/screens/booking_screen.dart';
 import '../../host/screens/add_charger_screen.dart';
 import '../../booking/screens/my_bookings_screen.dart';
+import '../../auth/screens/role_selection_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
