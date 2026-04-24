@@ -12,7 +12,7 @@ import '../../host/screens/add_charger_screen.dart';
 import '../../booking/screens/my_bookings_screen.dart';
 import '../../auth/screens/role_selection_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
-import '../../notifications/notification_screen.dart';
+
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
