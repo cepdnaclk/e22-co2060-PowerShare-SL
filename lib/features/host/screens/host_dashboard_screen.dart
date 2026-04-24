@@ -372,7 +372,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
                     ],
                   ),
                 ),
-                Text('Rs. ${charger.pricePerHour.toInt()}/hr',
+                Text('Rs. ${charger.pricePerKwh.toInt()}/hr',
                     style: const TextStyle(
                         fontWeight: FontWeight.bold,
                         color: Color(0xFF1E3A5F))),

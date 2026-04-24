@@ -275,4 +275,31 @@ class ApiService {
       return [];
     }
   }
+
+  // Accept booking (Host)
+  static Future<Map<String, dynamic>> acceptBooking(String id) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/api/bookings/$id/accept'),
+        headers: await _authHeaders(),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Reject booking (Host)
+  static Future<Map<String, dynamic>> rejectBooking(String id) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/api/bookings/$id/reject'),
+        headers: await _authHeaders(),
+        body: jsonEncode({'reason': 'Host declined'}),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }

@@ -44,7 +44,8 @@ class _ConfirmationScreenState extends State<ConfirmationScreen> {
       chargerAddress: widget.charger.address,
       date: dateStr,
       time: timeStr,
-      durationHours: widget.durationHours.toInt(),
+      estimatedKwh: widget.estimatedKwh,
+      durationHours: widget.durationHours,
       totalPrice: _grandTotal,
     );
 

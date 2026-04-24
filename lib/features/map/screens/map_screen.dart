@@ -307,7 +307,7 @@ class _MapScreenState extends State<MapScreen> {
                             ],
                           ),
                           Text(
-                            'Rs. ${_selectedCharger!.pricePerHour.toInt()}/hr',
+                            'Rs. ${_selectedCharger!.pricePerKwh.toInt()}/kWh',
                             style: const TextStyle(
                               fontWeight: FontWeight.bold,
                               color: Color(0xFF1E3A5F),
