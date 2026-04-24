@@ -7,7 +7,6 @@ class ApiService {
   static const String baseUrl =
       'https://e22-co2060-powershare-sl-production.up.railway.app';
 
-  // ─── JWT Token helpers ───────────────────────────────────────────
   static Future<String?> _getToken() async {
     final prefs = await SharedPreferences.getInstance();
     return prefs.getString('jwt_token');
@@ -96,8 +95,7 @@ class ApiService {
     }
   }
 
-  static Future<Map<String, dynamic>> toggleChargerAvailability(
-      String id) async {
+  static Future<Map<String, dynamic>> toggleChargerAvailability(String id) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/api/chargers/$id/availability'),
@@ -195,7 +193,8 @@ class ApiService {
     required String address,
     required double latitude,
     required double longitude,
-    required double pricePerHour,
+    required double pricePerKwh,
+    required double powerKw,
     required String ownerName,
     required bool isAvailable,
   }) async {
@@ -208,7 +207,8 @@ class ApiService {
           'address': address,
           'latitude': latitude,
           'longitude': longitude,
-          'pricePerHour': pricePerHour,
+          'pricePerKwh': pricePerKwh,
+          'powerKw': powerKw,
           'ownerName': ownerName,
           'isAvailable': isAvailable,
         }),
@@ -230,8 +230,9 @@ class ApiService {
     required String chargerAddress,
     required String date,
     required String time,
-    required int durationHours,
+    required double durationHours,
     required double totalPrice,
+    required double estimatedKwh,
   }) async {
     try {
       final response = await http.post(
@@ -245,6 +246,7 @@ class ApiService {
           'time': time,
           'durationHours': durationHours,
           'totalPrice': totalPrice,
+          'estimatedKwh': estimatedKwh,
         }),
       );
       if (response.statusCode == 200) {
