@@ -6,7 +6,7 @@ import '../models/charger_model.dart';
 class ApiService {
   // ✅ Local development: 10.0.2.2 = Android emulator-ගෙන් localhost
   // ✅ Real device/deployed: ඔබේ server URL දාන්න
-  static const String baseUrl = 'http://10.0.2.2:3000';
+  static const String baseUrl = 'https://e22-co2060-powershare-sl-production.up.railway.app';
 
   // ─── JWT Token helpers ───────────────────────────────────────────
   static Future<String?> _getToken() async {

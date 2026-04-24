@@ -1,4 +1,5 @@
 import 'package:flutter/material.dart';
+import 'package:shared_preferences/shared_preferences.dart';
 import 'package:flutter_map/flutter_map.dart';
 import 'package:latlong2/latlong.dart';
 import 'package:geolocator/geolocator.dart';
@@ -30,6 +31,7 @@ class _MapScreenState extends State<MapScreen> {
   String? _chargerError;
 
   String _userName = '';
+  String _userRole = 'driver'; // driver or host
 
   @override
   void initState() {
@@ -41,7 +43,11 @@ class _MapScreenState extends State<MapScreen> {
 
   Future<void> _loadUserInfo() async {
     final info = await AuthService().getUserInfo();
-    setState(() => _userName = info['name'] ?? '');
+    final prefs = await SharedPreferences.getInstance();
+    setState(() {
+      _userName = info['name'] ?? '';
+      _userRole = prefs.getString('user_role') ?? 'driver';
+    });
   }
 
   Future<void> _getUserLocation() async {
@@ -338,20 +344,23 @@ class _MapScreenState extends State<MapScreen> {
         mainAxisAlignment: MainAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          FloatingActionButton.extended(
-            heroTag: 'add_charger',
-            onPressed: () async {
-              final added = await Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const AddChargerScreen()),
-              );
-              if (added == true) _fetchChargers();
-            },
-            backgroundColor: Colors.green,
-            icon: const Icon(Icons.add, color: Colors.white),
-            label: const Text('Add Charger', style: TextStyle(color: Colors.white)),
-          ),
-          const SizedBox(height: 12),
+          // Add Charger — Host role only
+          if (_userRole == 'host') ...[
+            FloatingActionButton.extended(
+              heroTag: 'add_charger',
+              onPressed: () async {
+                final added = await Navigator.push(
+                  context,
+                  MaterialPageRoute(builder: (_) => const AddChargerScreen()),
+                );
+                if (added == true) _fetchChargers();
+              },
+              backgroundColor: Colors.green,
+              icon: const Icon(Icons.add, color: Colors.white),
+              label: const Text('Add Charger', style: TextStyle(color: Colors.white)),
+            ),
+            const SizedBox(height: 12),
+          ],
           FloatingActionButton(
             heroTag: 'my_location',
             onPressed: _getUserLocation,

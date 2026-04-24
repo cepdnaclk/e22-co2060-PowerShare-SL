@@ -37,11 +37,12 @@ class _RoleSelectionScreenState extends State<RoleSelectionScreen> {
     return Scaffold(
       backgroundColor: _primary,
       body: SafeArea(
-        child: Padding(
+        child: SingleChildScrollView(
           padding: const EdgeInsets.all(24),
           child: Column(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
+              const SizedBox(height: 40),
               // Logo
               const Icon(Icons.ev_station, size: 80, color: Colors.white),
               const SizedBox(height: 16),
