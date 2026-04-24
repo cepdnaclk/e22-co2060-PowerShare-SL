@@ -85,6 +85,55 @@ class ApiService {
   }
 
 
+
+  // ─── Notifications ────────────────────────────────────────────────
+
+  static Future<List<dynamic>> getNotifications() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/notifications'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        if (data['success'] == true) return data['notifications'];
+      }
+      return [];
+    } catch (e) { return []; }
+  }
+
+  static Future<int> getUnreadCount() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/notifications/unread-count'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) {
+        final data = jsonDecode(response.body);
+        return data['count'] ?? 0;
+      }
+      return 0;
+    } catch (e) { return 0; }
+  }
+
+  static Future<void> markNotificationRead(String id) async {
+    try {
+      await http.patch(
+        Uri.parse('$baseUrl/api/notifications/$id/read'),
+        headers: await _authHeaders(),
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    try {
+      await http.patch(
+        Uri.parse('$baseUrl/api/notifications/read-all'),
+        headers: await _authHeaders(),
+      );
+    } catch (_) {}
+  }
+
   // ─── Host — My Chargers ──────────────────────────────────────────
 
   static Future<List<ChargerModel>> getMyChargers() async {
@@ -144,6 +193,38 @@ class ApiService {
       }
       return [];
     } catch (e) { return []; }
+  }
+
+
+  // ─── Notifications ───────────────────────────────────────────────
+
+  static Future<Map<String, dynamic>> getNotifications() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/notifications'),
+        headers: await _authHeaders(),
+      );
+      if (response.statusCode == 200) return jsonDecode(response.body);
+      return {'notifications': [], 'unreadCount': 0};
+    } catch (e) { return {'notifications': [], 'unreadCount': 0}; }
+  }
+
+  static Future<void> markAllNotificationsRead() async {
+    try {
+      await http.patch(
+        Uri.parse('$baseUrl/api/notifications/read-all'),
+        headers: await _authHeaders(),
+      );
+    } catch (_) {}
+  }
+
+  static Future<void> markNotificationRead(String id) async {
+    try {
+      await http.patch(
+        Uri.parse('$baseUrl/api/notifications/$id/read'),
+        headers: await _authHeaders(),
+      );
+    } catch (_) {}
   }
 
   // ─── Add Charger (Host) ──────────────────────────────────────────

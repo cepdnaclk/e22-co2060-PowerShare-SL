@@ -11,6 +11,8 @@ import '../../booking/screens/booking_screen.dart';
 import '../../host/screens/add_charger_screen.dart';
 import '../../booking/screens/my_bookings_screen.dart';
 import '../../auth/screens/role_selection_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../notifications/notification_screen.dart';
 
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
@@ -31,14 +33,21 @@ class _MapScreenState extends State<MapScreen> {
   String? _chargerError;
 
   String _userName = '';
-  String _userRole = 'driver'; // driver or host
+  String _userRole = 'driver';
+  int _unreadCount = 0; // driver or host
 
   @override
   void initState() {
     super.initState();
     _loadUserInfo();
     _getUserLocation();
-    _fetchChargers(); // ✅ Backend-ගෙන් chargers load
+    _fetchChargers();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await ApiService.getUnreadCount();
+    setState(() => _unreadCount = count);
   }
 
   Future<void> _loadUserInfo() async {

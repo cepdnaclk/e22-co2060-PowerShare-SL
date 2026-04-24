@@ -5,6 +5,8 @@ import '../../../services/auth_service.dart';
 import '../../../models/charger_model.dart';
 import '../../auth/screens/login_screen.dart';
 import '../../auth/screens/role_selection_screen.dart';
+import '../../notifications/screens/notifications_screen.dart';
+import '../../notifications/notification_screen.dart';
 import 'add_charger_screen.dart';
 import 'host_bookings_screen.dart';
 
@@ -20,6 +22,7 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
   List<ChargerModel> _myChargers = [];
   bool _isLoading = true;
   String _userName = '';
+  int _unreadCount = 0;
 
   @override
   void initState() {
@@ -31,6 +34,12 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
     final info = await AuthService().getUserInfo();
     setState(() => _userName = info['name'] ?? '');
     await _fetchMyChargers();
+    _loadUnreadCount();
+  }
+
+  Future<void> _loadUnreadCount() async {
+    final count = await ApiService.getUnreadCount();
+    setState(() => _unreadCount = count);
   }
 
   Future<void> _fetchMyChargers() async {
@@ -98,6 +107,31 @@ class _HostDashboardScreenState extends State<HostDashboardScreen> {
         backgroundColor: _primary,
         foregroundColor: Colors.white,
         actions: [
+          // Notification bell
+          IconButton(
+            icon: const Icon(Icons.notifications_outlined),
+            tooltip: 'Notifications',
+            onPressed: () => Navigator.push(context,
+              MaterialPageRoute(builder: (_) => const NotificationScreen())),
+          ),
+          // Notification bell
+          Stack(children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () async {
+                await Navigator.push(context, MaterialPageRoute(builder: (_) => const NotificationsScreen()));
+                _loadUnreadCount();
+              },
+            ),
+            if (_unreadCount > 0) Positioned(
+              right: 8, top: 8,
+              child: Container(
+                padding: const EdgeInsets.all(3),
+                decoration: const BoxDecoration(color: Colors.red, shape: BoxShape.circle),
+                child: Text('$_unreadCount', style: const TextStyle(color: Colors.white, fontSize: 10, fontWeight: FontWeight.bold)),
+              ),
+            ),
+          ]),
           // Switch role
           IconButton(
             icon: const Icon(Icons.swap_horiz),
