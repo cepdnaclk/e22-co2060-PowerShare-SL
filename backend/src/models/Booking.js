@@ -7,19 +7,36 @@ const bookingSchema = new mongoose.Schema({
   userId:         { type: String, required: true },
   userName:       { type: String },
   userEmail:      { type: String },
-  hostId:         { type: String },           // ← host's userId
+  hostId:         { type: String },
+
   date:           { type: String, required: true },
   time:           { type: String, required: true },
   durationHours:  { type: Number, required: true },
-  estimatedKwh:   { type: Number, default: 0 },
   totalPrice:     { type: Number, required: true },
+  estimatedKwh:   { type: Number, default: 0 },
+
+  // For clash detection — store as actual DateTime
+  startDateTime:  { type: Date },
+  endDateTime:    { type: Date },
+
+  // Payment & booking status
+  // pending_confirmation → confirmed / rejected
+  // cancelled → refunded
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled', 'completed'],
-    default: 'pending',
+    enum: ['pending_confirmation', 'confirmed', 'rejected', 'cancelled', 'completed'],
+    default: 'pending_confirmation',
   },
-  cancelReason:   { type: String },
-  expiresAt:      { type: Date },             // ← auto-cancel time
-}, { timestamps: true });
+
+  // Payment tracking
+  paymentStatus: {
+    type: String,
+    enum: ['held', 'released', 'refunded'],
+    default: 'held',
+  },
+  paymentMethod:  { type: String, default: 'card' },
+
+  createdAt: { type: Date, default: Date.now },
+});
 
 module.exports = mongoose.model('Booking', bookingSchema);
