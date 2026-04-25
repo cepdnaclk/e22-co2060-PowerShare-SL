@@ -276,6 +276,18 @@ class ApiService {
     }
   }
 
+  static Future<Map<String, dynamic>> cancelBooking(String id) async {
+    try {
+      final response = await http.patch(
+        Uri.parse('$baseUrl/api/bookings/$id/cancel'),
+        headers: await _authHeaders(),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
   // Accept booking (Host)
   static Future<Map<String, dynamic>> acceptBooking(String id) async {
     try {
@@ -290,7 +302,7 @@ class ApiService {
   }
 
   //reject booking (Host)
-  
+
   static Future<Map<String, dynamic>> rejectBooking(String id) async {
     try {
       final response = await http.patch(
