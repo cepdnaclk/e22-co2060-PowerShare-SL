@@ -68,7 +68,9 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
   Color _statusColor(String s) {
     switch (s) {
       case 'confirmed': return Colors.green;
+      case 'pending_confirmation': return Colors.orange;  // ← add
       case 'pending':   return Colors.orange;
+      case 'rejected':  return Colors.red;                // ← add
       case 'cancelled': return Colors.red;
       case 'completed': return Colors.blue;
       default:          return Colors.grey;
@@ -106,10 +108,10 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                           color: Colors.white,
                           borderRadius: BorderRadius.circular(14),
                           border: Border.all(
-                            color: status == 'pending'
+                            color: status == 'pending_confirmation' || status == 'pending_confirmation'
                                 ? Colors.orange.shade300
                                 : Colors.grey.shade200,
-                            width: status == 'pending' ? 1.5 : 1,
+                            width: status == 'pending_confirmation' ? 1.5 : 1,
                           ),
                         ),
                         child: Column(children: [
@@ -147,7 +149,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                                 Text('Rs. ${b['totalPrice']?.toInt()}',
                                     style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
                               ]),
-                              if (status == 'pending')
+                              if (status == 'pending_confirmation' || status == 'pending_confirmation')
                                 Container(
                                   margin: const EdgeInsets.only(top: 8),
                                   padding: const EdgeInsets.all(8),
@@ -166,7 +168,7 @@ class _HostBookingsScreenState extends State<HostBookingsScreen> {
                           ),
 
                           // Accept/Reject buttons — pending only
-                          if (status == 'pending')
+                          if (status == 'pending_confirmation')
                             Container(
                               decoration: BoxDecoration(
                                 color: Colors.grey.shade50,

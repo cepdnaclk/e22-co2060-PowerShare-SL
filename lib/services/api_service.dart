@@ -280,7 +280,7 @@ class ApiService {
   static Future<Map<String, dynamic>> acceptBooking(String id) async {
     try {
       final response = await http.patch(
-        Uri.parse('$baseUrl/api/bookings/$id/accept'),
+        Uri.parse('$baseUrl/api/bookings/$id/confirm'),
         headers: await _authHeaders(),
       );
       return jsonDecode(response.body);
@@ -289,13 +289,13 @@ class ApiService {
     }
   }
 
-  // Reject booking (Host)
+  //reject booking (Host)
+  
   static Future<Map<String, dynamic>> rejectBooking(String id) async {
     try {
       final response = await http.patch(
         Uri.parse('$baseUrl/api/bookings/$id/reject'),
         headers: await _authHeaders(),
-        body: jsonEncode({'reason': 'Host declined'}),
       );
       return jsonDecode(response.body);
     } catch (e) {
