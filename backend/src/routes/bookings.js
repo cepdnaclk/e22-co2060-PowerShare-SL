@@ -8,15 +8,16 @@ const { createNotification } = require('../services/notificationService');
 // Create booking + notify both parties
 router.post('/', auth, async (req, res) => {
   try {
+    const charger = await Charger.findById(req.body.chargerId);
+    
     const booking = new Booking({
       ...req.body,
       userId: req.user.userId,
       userName: req.user.name,
       userEmail: req.user.email,
+      hostId: charger?.ownerId || null,  // ← hostId save
     });
     await booking.save();
-
-    const charger = await Charger.findById(req.body.chargerId);
 
     // Notify HOST
     if (charger?.ownerId) {
@@ -111,7 +112,7 @@ router.patch('/:id/accept', auth, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Not found' });
-    if (booking.hostId !== req.user.userId) return res.status(403).json({ success: false, message: 'Not your booking' });
+    if (String(booking.hostId) !== String(req.user.userId)) return res.status(403).json({ success: false, message: 'Not your booking' });
     if (booking.status !== 'pending') return res.status(400).json({ success: false, message: 'Not pending' });
 
     booking.status = 'confirmed';
@@ -137,7 +138,7 @@ router.patch('/:id/reject', auth, async (req, res) => {
   try {
     const booking = await Booking.findById(req.params.id);
     if (!booking) return res.status(404).json({ success: false, message: 'Not found' });
-    if (booking.hostId !== req.user.userId) return res.status(403).json({ success: false, message: 'Not your booking' });
+    if (String(booking.hostId) !== String(req.user.userId)) return res.status(403).json({ success: false, message: 'Not your booking' });
     if (booking.status !== 'pending') return res.status(400).json({ success: false, message: 'Not pending' });
 
     booking.status = 'cancelled';
