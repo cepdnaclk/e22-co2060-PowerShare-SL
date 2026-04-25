@@ -13,7 +13,6 @@ import '../../booking/screens/my_bookings_screen.dart';
 import '../../auth/screens/role_selection_screen.dart';
 import '../../notifications/screens/notifications_screen.dart';
 
-
 class MapScreen extends StatefulWidget {
   const MapScreen({super.key});
 
@@ -23,18 +22,39 @@ class MapScreen extends StatefulWidget {
 
 class _MapScreenState extends State<MapScreen> {
   final MapController _mapController = MapController();
-  LatLng _currentLocation = const LatLng(6.9271, 79.8612); // Colombo default
+  LatLng _currentLocation = const LatLng(6.9271, 79.8612);
   ChargerModel? _selectedCharger;
   bool _isLoadingLocation = false;
-
-  // ✅ FIX: hardcoded list → API list
   List<ChargerModel> _chargers = [];
   bool _isLoadingChargers = false;
   String? _chargerError;
-
   String _userName = '';
   String _userRole = 'driver';
-  int _unreadCount = 0; // driver or host
+  int _unreadCount = 0;
+  bool _showLegend = false;
+
+  // ── Power level → color ───────────────────────────────────────────
+  Color _chargerColor(ChargerModel c) {
+    if (!c.isAvailable) return Colors.red;
+    if (c.powerKw <= 3.3) return Colors.orange;
+    if (c.powerKw <= 7.4) return Colors.blue;
+    if (c.powerKw <= 22.0) return Colors.green;
+    return Colors.purple; // 50kW+ Rapid
+  }
+
+  String _chargerTypeLabel(ChargerModel c) {
+    if (c.powerKw <= 3.3) return 'Slow';
+    if (c.powerKw <= 7.4) return 'Standard';
+    if (c.powerKw <= 22.0) return 'Fast';
+    return 'Rapid';
+  }
+
+  IconData _chargerTypeIcon(ChargerModel c) {
+    if (c.powerKw <= 3.3) return Icons.power_outlined;
+    if (c.powerKw <= 7.4) return Icons.ev_station;
+    if (c.powerKw <= 22.0) return Icons.flash_on;
+    return Icons.bolt;
+  }
 
   @override
   void initState() {
@@ -80,15 +100,9 @@ class _MapScreenState extends State<MapScreen> {
     setState(() => _isLoadingLocation = false);
   }
 
-  // ✅ FIX: Backend API-ගෙන් chargers ලබා ගැනීම
   Future<void> _fetchChargers() async {
-    setState(() {
-      _isLoadingChargers = true;
-      _chargerError = null;
-    });
-
+    setState(() { _isLoadingChargers = true; _chargerError = null; });
     final chargers = await ApiService.getChargers();
-
     setState(() {
       _isLoadingChargers = false;
       if (chargers.isNotEmpty) {
@@ -103,7 +117,15 @@ class _MapScreenState extends State<MapScreen> {
   Widget build(BuildContext context) {
     return Scaffold(
       appBar: AppBar(
-        title: const Text('PowerShare SL'),
+        title: Row(
+          mainAxisSize: MainAxisSize.min,
+          children: [
+            Image.asset('assets/images/logo.png', height: 28),
+            const SizedBox(width: 8),
+            const Text('PowerShare SL',
+                style: TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+          ],
+        ),
         backgroundColor: const Color(0xFF1E3A5F),
         foregroundColor: Colors.white,
         actions: [
@@ -111,33 +133,56 @@ class _MapScreenState extends State<MapScreen> {
             const Padding(
               padding: EdgeInsets.all(16.0),
               child: SizedBox(
-                width: 20,
-                height: 20,
+                width: 20, height: 20,
                 child: CircularProgressIndicator(
-                  color: Colors.white,
-                  strokeWidth: 2,
-                ),
+                    color: Colors.white, strokeWidth: 2),
               ),
             ),
           if (_userName.isNotEmpty)
             Padding(
-              padding: const EdgeInsets.symmetric(horizontal: 8),
+              padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Center(
-                child: Text(
-                  _userName.split(' ').first,
-                  style: const TextStyle(color: Colors.white70),
-                ),
+                child: Text(_userName.split(' ').first,
+                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
               ),
             ),
+          // Notifications bell
+          Stack(children: [
+            IconButton(
+              icon: const Icon(Icons.notifications_outlined),
+              onPressed: () async {
+                await Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const NotificationsScreen()));
+                _loadUnreadCount();
+              },
+            ),
+            if (_unreadCount > 0)
+              Positioned(
+                right: 8, top: 8,
+                child: Container(
+                  padding: const EdgeInsets.all(3),
+                  decoration: const BoxDecoration(
+                      color: Colors.red, shape: BoxShape.circle),
+                  child: Text('$_unreadCount',
+                      style: const TextStyle(
+                          color: Colors.white,
+                          fontSize: 10,
+                          fontWeight: FontWeight.bold)),
+                ),
+              ),
+          ]),
           IconButton(
             icon: const Icon(Icons.receipt_long),
             tooltip: 'My Bookings',
-            onPressed: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(builder: (_) => const MyBookingsScreen()),
-              );
-            },
+            onPressed: () => Navigator.push(context,
+                MaterialPageRoute(builder: (_) => const MyBookingsScreen())),
+          ),
+          IconButton(
+            icon: const Icon(Icons.swap_horiz),
+            tooltip: 'Switch Role',
+            onPressed: () => Navigator.pushReplacement(context,
+                MaterialPageRoute(builder: (_) => const RoleSelectionScreen())),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -145,10 +190,8 @@ class _MapScreenState extends State<MapScreen> {
             onPressed: () async {
               await AuthService().signOut();
               if (context.mounted) {
-                Navigator.pushReplacement(
-                  context,
-                  MaterialPageRoute(builder: (_) => const LoginScreen()),
-                );
+                Navigator.pushReplacement(context,
+                    MaterialPageRoute(builder: (_) => const LoginScreen()));
               }
             },
           ),
@@ -156,190 +199,314 @@ class _MapScreenState extends State<MapScreen> {
       ),
       body: Stack(
         children: [
+          // Map
           FlutterMap(
             mapController: _mapController,
             options: MapOptions(
               initialCenter: _currentLocation,
               initialZoom: 10.0,
-              onTap: (_, __) => setState(() => _selectedCharger = null),
+              onTap: (_, __) => setState(() {
+                _selectedCharger = null;
+                _showLegend = false;
+              }),
             ),
             children: [
               TileLayer(
-                urlTemplate: 'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
+                urlTemplate:
+                    'https://tile.openstreetmap.org/{z}/{x}/{y}.png',
                 userAgentPackageName: 'com.example.powershare_sl',
               ),
               MarkerLayer(
                 markers: [
-                  // User location marker
+                  // User location
                   Marker(
                     point: _currentLocation,
-                    width: 40,
-                    height: 40,
-                    child: const Icon(
-                      Icons.my_location,
-                      color: Colors.blue,
-                      size: 35,
-                    ),
-                  ),
-                  // ✅ FIX: API chargers map markers
-                  ..._chargers.map(
-                    (charger) => Marker(
-                      point: LatLng(charger.latitude, charger.longitude),
-                      width: 40,
-                      height: 40,
-                      child: GestureDetector(
-                        onTap: () => setState(() => _selectedCharger = charger),
-                        child: Icon(
-                          Icons.ev_station,
-                          color: charger.isAvailable ? Colors.green : Colors.red,
-                          size: 35,
-                        ),
+                    width: 50,
+                    height: 50,
+                    child: Container(
+                      decoration: BoxDecoration(
+                        color: Colors.blue.withOpacity(0.2),
+                        shape: BoxShape.circle,
                       ),
+                      child: const Icon(Icons.my_location,
+                          color: Colors.blue, size: 30),
                     ),
                   ),
+                  // Charger markers — power level colors
+                  ..._chargers.map((charger) => Marker(
+                        point: LatLng(charger.latitude, charger.longitude),
+                        width: 48,
+                        height: 48,
+                        child: GestureDetector(
+                          onTap: () => setState(
+                              () => _selectedCharger = charger),
+                          child: Container(
+                            decoration: BoxDecoration(
+                              color: _chargerColor(charger),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                  color: Colors.white, width: 2.5),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: _chargerColor(charger)
+                                      .withOpacity(0.5),
+                                  blurRadius: 8,
+                                  offset: const Offset(0, 3),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              _chargerTypeIcon(charger),
+                              color: Colors.white,
+                              size: 22,
+                            ),
+                          ),
+                        ),
+                      )),
                 ],
               ),
             ],
           ),
 
-          // ✅ Error banner
+          // Error banner
           if (_chargerError != null)
             Positioned(
-              top: 10,
-              left: 16,
-              right: 16,
+              top: 10, left: 16, right: 16,
               child: Container(
-                padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 10),
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
                 decoration: BoxDecoration(
                   color: Colors.red.shade700,
                   borderRadius: BorderRadius.circular(10),
                 ),
                 child: Row(
                   children: [
-                    const Icon(Icons.error_outline, color: Colors.white, size: 18),
+                    const Icon(Icons.error_outline,
+                        color: Colors.white, size: 18),
                     const SizedBox(width: 8),
                     Expanded(
-                      child: Text(
-                        _chargerError!,
-                        style: const TextStyle(color: Colors.white, fontSize: 13),
-                      ),
+                      child: Text(_chargerError!,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13)),
                     ),
                     TextButton(
                       onPressed: _fetchChargers,
-                      child: const Text('Retry', style: TextStyle(color: Colors.white)),
+                      child: const Text('Retry',
+                          style: TextStyle(color: Colors.white)),
                     ),
                   ],
                 ),
               ),
             ),
 
+          // Legend button + panel
+          Positioned(
+            top: 12, right: 12,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              children: [
+                GestureDetector(
+                  onTap: () =>
+                      setState(() => _showLegend = !_showLegend),
+                  child: Container(
+                    padding: const EdgeInsets.symmetric(
+                        horizontal: 12, vertical: 7),
+                    decoration: BoxDecoration(
+                      color: const Color(0xFF1E3A5F),
+                      borderRadius: BorderRadius.circular(20),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.2),
+                            blurRadius: 6)
+                      ],
+                    ),
+                    child: Row(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        const Icon(Icons.layers,
+                            color: Colors.white, size: 16),
+                        const SizedBox(width: 6),
+                        Text(
+                          _showLegend ? 'Hide Legend' : 'Legend',
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 12),
+                        ),
+                      ],
+                    ),
+                  ),
+                ),
+                if (_showLegend) ...[
+                  const SizedBox(height: 8),
+                  Container(
+                    padding: const EdgeInsets.all(12),
+                    decoration: BoxDecoration(
+                      color: Colors.white,
+                      borderRadius: BorderRadius.circular(12),
+                      boxShadow: [
+                        BoxShadow(
+                            color: Colors.black.withOpacity(0.1),
+                            blurRadius: 10)
+                      ],
+                    ),
+                    child: Column(
+                      crossAxisAlignment: CrossAxisAlignment.start,
+                      children: [
+                        const Text('Charger Types',
+                            style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                fontSize: 12,
+                                color: Color(0xFF1E3A5F))),
+                        const SizedBox(height: 8),
+                        _legendItem(Colors.orange,
+                            Icons.power_outlined, 'Slow (3.3 kW)'),
+                        _legendItem(Colors.blue,
+                            Icons.ev_station, 'Standard (7.4 kW)'),
+                        _legendItem(Colors.green,
+                            Icons.flash_on, 'Fast (22 kW)'),
+                        _legendItem(Colors.purple,
+                            Icons.bolt, 'Rapid (50 kW)'),
+                        const Divider(height: 12),
+                        _legendItem(Colors.red,
+                            Icons.ev_station, 'Unavailable'),
+                      ],
+                    ),
+                  ),
+                ],
+              ],
+            ),
+          ),
+
           // Charger info card
           if (_selectedCharger != null)
             Positioned(
-              bottom: 20,
-              left: 16,
-              right: 16,
+              bottom: 20, left: 16, right: 16,
               child: Card(
-                elevation: 8,
+                elevation: 12,
                 shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(16),
-                ),
+                    borderRadius: BorderRadius.circular(20)),
                 child: Padding(
-                  padding: const EdgeInsets.all(16.0),
+                  padding: const EdgeInsets.all(16),
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     mainAxisSize: MainAxisSize.min,
                     children: [
                       Row(
                         children: [
-                          Icon(
-                            Icons.ev_station,
-                            color: _selectedCharger!.isAvailable
-                                ? Colors.green
-                                : Colors.red,
-                            size: 28,
+                          // Colored icon
+                          Container(
+                            padding: const EdgeInsets.all(8),
+                            decoration: BoxDecoration(
+                              color: _chargerColor(_selectedCharger!)
+                                  .withOpacity(0.15),
+                              borderRadius: BorderRadius.circular(10),
+                            ),
+                            child: Icon(
+                              _chargerTypeIcon(_selectedCharger!),
+                              color: _chargerColor(_selectedCharger!),
+                              size: 24,
+                            ),
                           ),
-                          const SizedBox(width: 8),
+                          const SizedBox(width: 10),
                           Expanded(
-                            child: Text(
-                              _selectedCharger!.name,
-                              style: const TextStyle(
-                                fontSize: 16,
-                                fontWeight: FontWeight.bold,
-                              ),
+                            child: Column(
+                              crossAxisAlignment:
+                                  CrossAxisAlignment.start,
+                              children: [
+                                Text(
+                                  _selectedCharger!.name,
+                                  style: const TextStyle(
+                                      fontSize: 15,
+                                      fontWeight: FontWeight.bold),
+                                ),
+                                Text(
+                                  '${_chargerTypeLabel(_selectedCharger!)} • ${_selectedCharger!.powerKw} kW',
+                                  style: TextStyle(
+                                      fontSize: 12,
+                                      color: _chargerColor(
+                                          _selectedCharger!),
+                                      fontWeight: FontWeight.w600),
+                                ),
+                              ],
                             ),
                           ),
                           Container(
                             padding: const EdgeInsets.symmetric(
-                                horizontal: 8, vertical: 4),
+                                horizontal: 10, vertical: 5),
                             decoration: BoxDecoration(
                               color: _selectedCharger!.isAvailable
                                   ? Colors.green
                                   : Colors.red,
-                              borderRadius: BorderRadius.circular(8),
+                              borderRadius: BorderRadius.circular(20),
                             ),
                             child: Text(
-                              _selectedCharger!.isAvailable ? 'Available' : 'Busy',
+                              _selectedCharger!.isAvailable
+                                  ? 'Available'
+                                  : 'Busy',
                               style: const TextStyle(
-                                color: Colors.white,
-                                fontSize: 12,
-                              ),
+                                  color: Colors.white, fontSize: 11),
                             ),
                           ),
                         ],
                       ),
-                      const SizedBox(height: 8),
-                      Text(
-                        _selectedCharger!.address,
-                        style: const TextStyle(color: Colors.grey, fontSize: 13),
-                      ),
-                      const SizedBox(height: 8),
+                      const SizedBox(height: 10),
+                      Text(_selectedCharger!.address,
+                          style: const TextStyle(
+                              color: Colors.grey, fontSize: 12)),
+                      const SizedBox(height: 10),
                       Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
                         children: [
-                          Row(
+                          const Icon(Icons.star,
+                              color: Colors.amber, size: 14),
+                          Text(' ${_selectedCharger!.rating}',
+                              style: const TextStyle(fontSize: 13)),
+                          const SizedBox(width: 12),
+                          const Icon(Icons.person,
+                              color: Colors.grey, size: 14),
+                          Text(' ${_selectedCharger!.ownerName}',
+                              style: const TextStyle(fontSize: 13)),
+                          const Spacer(),
+                          Column(
+                            crossAxisAlignment: CrossAxisAlignment.end,
                             children: [
-                              const Icon(Icons.star, color: Colors.amber, size: 16),
-                              Text(' ${_selectedCharger!.rating}'),
-                              const SizedBox(width: 16),
-                              const Icon(Icons.person, color: Colors.grey, size: 16),
-                              Text(' ${_selectedCharger!.ownerName}'),
+                              Text(
+                                'Rs. ${_selectedCharger!.pricePerKwh.toInt()}/kWh',
+                                style: const TextStyle(
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF1E3A5F),
+                                    fontSize: 14),
+                              ),
+                              Text(
+                                '≈ Rs. ${(_selectedCharger!.pricePerKwh * 5).toStringAsFixed(0)}/hr',
+                                style: const TextStyle(
+                                    fontSize: 11, color: Colors.grey),
+                              ),
                             ],
-                          ),
-                          Text(
-                            'Rs. ${_selectedCharger!.pricePerKwh.toInt()}/kWh',
-                            style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E3A5F),
-                              fontSize: 15,
-                            ),
                           ),
                         ],
                       ),
                       const SizedBox(height: 12),
                       SizedBox(
                         width: double.infinity,
-                        child: ElevatedButton(
+                        child: ElevatedButton.icon(
                           onPressed: _selectedCharger!.isAvailable
-                              ? () {
-                                  Navigator.push(
+                              ? () => Navigator.push(
                                     context,
                                     MaterialPageRoute(
                                       builder: (_) => BookingScreen(
-                                        charger: _selectedCharger!,
-                                      ),
+                                          charger: _selectedCharger!),
                                     ),
-                                  );
-                                }
+                                  )
                               : null,
+                          icon: const Icon(Icons.bolt, size: 18),
+                          label: const Text('Book Now'),
                           style: ElevatedButton.styleFrom(
                             backgroundColor: const Color(0xFF1E3A5F),
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
-                              borderRadius: BorderRadius.circular(10),
-                            ),
+                                borderRadius: BorderRadius.circular(12)),
+                            padding: const EdgeInsets.symmetric(
+                                vertical: 12),
                           ),
-                          child: const Text('Book Now'),
                         ),
                       ),
                     ],
@@ -353,20 +520,19 @@ class _MapScreenState extends State<MapScreen> {
         mainAxisAlignment: MainAxisAlignment.end,
         mainAxisSize: MainAxisSize.min,
         children: [
-          // Add Charger — Host role only
           if (_userRole == 'host') ...[
             FloatingActionButton.extended(
               heroTag: 'add_charger',
               onPressed: () async {
-                final added = await Navigator.push(
-                  context,
-                  MaterialPageRoute(builder: (_) => const AddChargerScreen()),
-                );
+                final added = await Navigator.push(context,
+                    MaterialPageRoute(
+                        builder: (_) => const AddChargerScreen()));
                 if (added == true) _fetchChargers();
               },
               backgroundColor: Colors.green,
               icon: const Icon(Icons.add, color: Colors.white),
-              label: const Text('Add Charger', style: TextStyle(color: Colors.white)),
+              label: const Text('Add Charger',
+                  style: TextStyle(color: Colors.white)),
             ),
             const SizedBox(height: 12),
           ],
@@ -376,6 +542,26 @@ class _MapScreenState extends State<MapScreen> {
             backgroundColor: const Color(0xFF1E3A5F),
             child: const Icon(Icons.my_location, color: Colors.white),
           ),
+        ],
+      ),
+    );
+  }
+
+  Widget _legendItem(Color color, IconData icon, String label) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 3),
+      child: Row(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Container(
+            width: 28, height: 28,
+            decoration: BoxDecoration(
+                color: color, shape: BoxShape.circle),
+            child: Icon(icon, color: Colors.white, size: 14),
+          ),
+          const SizedBox(width: 8),
+          Text(label,
+              style: const TextStyle(fontSize: 12, color: Colors.black87)),
         ],
       ),
     );
