@@ -33,13 +33,30 @@ class _MapScreenState extends State<MapScreen> {
   int _unreadCount = 0;
   bool _showLegend = false;
 
+  // Filters
+  String _filterType = 'All';
+  bool _filterAvailable = false;
+
+  List<ChargerModel> get _filteredChargers {
+    return _chargers.where((c) {
+      if (_filterAvailable && !c.isAvailable) return false;
+      switch (_filterType) {
+        case 'Slow':     return c.powerKw <= 3.3;
+        case 'Standard': return c.powerKw > 3.3 && c.powerKw <= 7.4;
+        case 'Fast':     return c.powerKw > 7.4 && c.powerKw <= 22.0;
+        case 'Rapid':    return c.powerKw > 22.0;
+        default:         return true;
+      }
+    }).toList();
+  }
+
   // ── Power level → color ───────────────────────────────────────────
   Color _chargerColor(ChargerModel c) {
     if (!c.isAvailable) return Colors.red;
     if (c.powerKw <= 3.3) return Colors.orange;
     if (c.powerKw <= 7.4) return Colors.blue;
     if (c.powerKw <= 22.0) return Colors.green;
-    return Colors.purple; // 50kW+ Rapid
+    return Colors.purple;
   }
 
   String _chargerTypeLabel(ChargerModel c) {
@@ -101,7 +118,10 @@ class _MapScreenState extends State<MapScreen> {
   }
 
   Future<void> _fetchChargers() async {
-    setState(() { _isLoadingChargers = true; _chargerError = null; });
+    setState(() {
+      _isLoadingChargers = true;
+      _chargerError = null;
+    });
     final chargers = await ApiService.getChargers();
     setState(() {
       _isLoadingChargers = false;
@@ -143,15 +163,16 @@ class _MapScreenState extends State<MapScreen> {
               padding: const EdgeInsets.symmetric(horizontal: 4),
               child: Center(
                 child: Text(_userName.split(' ').first,
-                    style: const TextStyle(color: Colors.white70, fontSize: 13)),
+                    style: const TextStyle(
+                        color: Colors.white70, fontSize: 13)),
               ),
             ),
-          // Notifications bell
           Stack(children: [
             IconButton(
               icon: const Icon(Icons.notifications_outlined),
               onPressed: () async {
-                await Navigator.push(context,
+                await Navigator.push(
+                    context,
                     MaterialPageRoute(
                         builder: (_) => const NotificationsScreen()));
                 _loadUnreadCount();
@@ -182,7 +203,8 @@ class _MapScreenState extends State<MapScreen> {
             icon: const Icon(Icons.swap_horiz),
             tooltip: 'Switch Role',
             onPressed: () => Navigator.pushReplacement(context,
-                MaterialPageRoute(builder: (_) => const RoleSelectionScreen())),
+                MaterialPageRoute(
+                    builder: (_) => const RoleSelectionScreen())),
           ),
           IconButton(
             icon: const Icon(Icons.logout),
@@ -221,8 +243,7 @@ class _MapScreenState extends State<MapScreen> {
                   // User location
                   Marker(
                     point: _currentLocation,
-                    width: 50,
-                    height: 50,
+                    width: 50, height: 50,
                     child: Container(
                       decoration: BoxDecoration(
                         color: Colors.blue.withOpacity(0.2),
@@ -232,14 +253,13 @@ class _MapScreenState extends State<MapScreen> {
                           color: Colors.blue, size: 30),
                     ),
                   ),
-                  // Charger markers — power level colors
-                  ..._chargers.map((charger) => Marker(
+                  // Filtered charger markers
+                  ..._filteredChargers.map((charger) => Marker(
                         point: LatLng(charger.latitude, charger.longitude),
-                        width: 48,
-                        height: 48,
+                        width: 48, height: 48,
                         child: GestureDetector(
-                          onTap: () => setState(
-                              () => _selectedCharger = charger),
+                          onTap: () =>
+                              setState(() => _selectedCharger = charger),
                           child: Container(
                             decoration: BoxDecoration(
                               color: _chargerColor(charger),
@@ -255,11 +275,8 @@ class _MapScreenState extends State<MapScreen> {
                                 ),
                               ],
                             ),
-                            child: Icon(
-                              _chargerTypeIcon(charger),
-                              color: Colors.white,
-                              size: 22,
-                            ),
+                            child: Icon(_chargerTypeIcon(charger),
+                                color: Colors.white, size: 22),
                           ),
                         ),
                       )),
@@ -268,40 +285,63 @@ class _MapScreenState extends State<MapScreen> {
             ],
           ),
 
-          // Error banner
-          if (_chargerError != null)
-            Positioned(
-              top: 10, left: 16, right: 16,
-              child: Container(
-                padding: const EdgeInsets.symmetric(
-                    horizontal: 16, vertical: 10),
-                decoration: BoxDecoration(
-                  color: Colors.red.shade700,
-                  borderRadius: BorderRadius.circular(10),
-                ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.error_outline,
-                        color: Colors.white, size: 18),
-                    const SizedBox(width: 8),
-                    Expanded(
-                      child: Text(_chargerError!,
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 13)),
+          // Filter bar — top
+          Positioned(
+            top: 10, left: 12, right: 80,
+            child: SingleChildScrollView(
+              scrollDirection: Axis.horizontal,
+              child: Row(
+                children: [
+                  _filterChip('All', Colors.grey),
+                  _filterChip('Slow', Colors.orange),
+                  _filterChip('Standard', Colors.blue),
+                  _filterChip('Fast', Colors.green),
+                  _filterChip('Rapid', Colors.purple),
+                  const SizedBox(width: 8),
+                  GestureDetector(
+                    onTap: () => setState(
+                        () => _filterAvailable = !_filterAvailable),
+                    child: Container(
+                      padding: const EdgeInsets.symmetric(
+                          horizontal: 12, vertical: 7),
+                      decoration: BoxDecoration(
+                        color: _filterAvailable
+                            ? Colors.green
+                            : Colors.white,
+                        borderRadius: BorderRadius.circular(20),
+                        boxShadow: [
+                          BoxShadow(
+                              color: Colors.black.withOpacity(0.1),
+                              blurRadius: 4)
+                        ],
+                      ),
+                      child: Row(
+                        children: [
+                          Icon(Icons.check_circle,
+                              size: 14,
+                              color: _filterAvailable
+                                  ? Colors.white
+                                  : Colors.grey),
+                          const SizedBox(width: 4),
+                          Text('Available',
+                              style: TextStyle(
+                                  fontSize: 12,
+                                  color: _filterAvailable
+                                      ? Colors.white
+                                      : Colors.grey,
+                                  fontWeight: FontWeight.w600)),
+                        ],
+                      ),
                     ),
-                    TextButton(
-                      onPressed: _fetchChargers,
-                      child: const Text('Retry',
-                          style: TextStyle(color: Colors.white)),
-                    ),
-                  ],
-                ),
+                  ),
+                ],
               ),
             ),
+          ),
 
           // Legend button + panel
           Positioned(
-            top: 12, right: 12,
+            top: 10, right: 12,
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.end,
               children: [
@@ -310,7 +350,7 @@ class _MapScreenState extends State<MapScreen> {
                       setState(() => _showLegend = !_showLegend),
                   child: Container(
                     padding: const EdgeInsets.symmetric(
-                        horizontal: 12, vertical: 7),
+                        horizontal: 10, vertical: 7),
                     decoration: BoxDecoration(
                       color: const Color(0xFF1E3A5F),
                       borderRadius: BorderRadius.circular(20),
@@ -320,19 +360,8 @@ class _MapScreenState extends State<MapScreen> {
                             blurRadius: 6)
                       ],
                     ),
-                    child: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        const Icon(Icons.layers,
-                            color: Colors.white, size: 16),
-                        const SizedBox(width: 6),
-                        Text(
-                          _showLegend ? 'Hide Legend' : 'Legend',
-                          style: const TextStyle(
-                              color: Colors.white, fontSize: 12),
-                        ),
-                      ],
-                    ),
+                    child: const Icon(Icons.layers,
+                        color: Colors.white, size: 18),
                   ),
                 ),
                 if (_showLegend) ...[
@@ -361,13 +390,13 @@ class _MapScreenState extends State<MapScreen> {
                             Icons.power_outlined, 'Slow (3.3 kW)'),
                         _legendItem(Colors.blue,
                             Icons.ev_station, 'Standard (7.4 kW)'),
-                        _legendItem(Colors.green,
-                            Icons.flash_on, 'Fast (22 kW)'),
-                        _legendItem(Colors.purple,
-                            Icons.bolt, 'Rapid (50 kW)'),
+                        _legendItem(
+                            Colors.green, Icons.flash_on, 'Fast (22 kW)'),
+                        _legendItem(
+                            Colors.purple, Icons.bolt, 'Rapid (50 kW)'),
                         const Divider(height: 12),
-                        _legendItem(Colors.red,
-                            Icons.ev_station, 'Unavailable'),
+                        _legendItem(
+                            Colors.red, Icons.ev_station, 'Unavailable'),
                       ],
                     ),
                   ),
@@ -375,6 +404,37 @@ class _MapScreenState extends State<MapScreen> {
               ],
             ),
           ),
+
+          // Error banner
+          if (_chargerError != null)
+            Positioned(
+              top: 55, left: 16, right: 16,
+              child: Container(
+                padding: const EdgeInsets.symmetric(
+                    horizontal: 16, vertical: 10),
+                decoration: BoxDecoration(
+                  color: Colors.red.shade700,
+                  borderRadius: BorderRadius.circular(10),
+                ),
+                child: Row(
+                  children: [
+                    const Icon(Icons.error_outline,
+                        color: Colors.white, size: 18),
+                    const SizedBox(width: 8),
+                    Expanded(
+                      child: Text(_chargerError!,
+                          style: const TextStyle(
+                              color: Colors.white, fontSize: 13)),
+                    ),
+                    TextButton(
+                      onPressed: _fetchChargers,
+                      child: const Text('Retry',
+                          style: TextStyle(color: Colors.white)),
+                    ),
+                  ],
+                ),
+              ),
+            ),
 
           // Charger info card
           if (_selectedCharger != null)
@@ -392,7 +452,6 @@ class _MapScreenState extends State<MapScreen> {
                     children: [
                       Row(
                         children: [
-                          // Colored icon
                           Container(
                             padding: const EdgeInsets.all(8),
                             decoration: BoxDecoration(
@@ -409,21 +468,18 @@ class _MapScreenState extends State<MapScreen> {
                           const SizedBox(width: 10),
                           Expanded(
                             child: Column(
-                              crossAxisAlignment:
-                                  CrossAxisAlignment.start,
+                              crossAxisAlignment: CrossAxisAlignment.start,
                               children: [
-                                Text(
-                                  _selectedCharger!.name,
-                                  style: const TextStyle(
-                                      fontSize: 15,
-                                      fontWeight: FontWeight.bold),
-                                ),
+                                Text(_selectedCharger!.name,
+                                    style: const TextStyle(
+                                        fontSize: 15,
+                                        fontWeight: FontWeight.bold)),
                                 Text(
                                   '${_chargerTypeLabel(_selectedCharger!)} • ${_selectedCharger!.powerKw} kW',
                                   style: TextStyle(
                                       fontSize: 12,
-                                      color: _chargerColor(
-                                          _selectedCharger!),
+                                      color:
+                                          _chargerColor(_selectedCharger!),
                                       fontWeight: FontWeight.w600),
                                 ),
                               ],
@@ -476,7 +532,7 @@ class _MapScreenState extends State<MapScreen> {
                                     fontSize: 14),
                               ),
                               Text(
-                                '≈ Rs. ${(_selectedCharger!.pricePerKwh * 5).toStringAsFixed(0)}/hr',
+                                '≈ Rs. ${(_selectedCharger!.powerKw * _selectedCharger!.pricePerKwh).toStringAsFixed(0)}/hr',
                                 style: const TextStyle(
                                     fontSize: 11, color: Colors.grey),
                               ),
@@ -504,8 +560,7 @@ class _MapScreenState extends State<MapScreen> {
                             foregroundColor: Colors.white,
                             shape: RoundedRectangleBorder(
                                 borderRadius: BorderRadius.circular(12)),
-                            padding: const EdgeInsets.symmetric(
-                                vertical: 12),
+                            padding: const EdgeInsets.symmetric(vertical: 12),
                           ),
                         ),
                       ),
@@ -524,7 +579,8 @@ class _MapScreenState extends State<MapScreen> {
             FloatingActionButton.extended(
               heroTag: 'add_charger',
               onPressed: () async {
-                final added = await Navigator.push(context,
+                final added = await Navigator.push(
+                    context,
                     MaterialPageRoute(
                         builder: (_) => const AddChargerScreen()));
                 if (added == true) _fetchChargers();
@@ -547,6 +603,36 @@ class _MapScreenState extends State<MapScreen> {
     );
   }
 
+  Widget _filterChip(String type, Color color) {
+    final isSelected = _filterType == type;
+    return GestureDetector(
+      onTap: () => setState(() => _filterType = type),
+      child: Container(
+        margin: const EdgeInsets.only(right: 8),
+        padding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 7),
+        decoration: BoxDecoration(
+          color: isSelected ? color : Colors.white,
+          borderRadius: BorderRadius.circular(20),
+          border: Border.all(
+              color: isSelected ? color : Colors.grey.shade300),
+          boxShadow: [
+            BoxShadow(
+                color: Colors.black.withOpacity(0.1), blurRadius: 4)
+          ],
+        ),
+        child: Text(
+          type,
+          style: TextStyle(
+            fontSize: 12,
+            color: isSelected ? Colors.white : Colors.grey.shade700,
+            fontWeight: FontWeight.w600,
+          ),
+        ),
+      ),
+    );
+  }
+
   Widget _legendItem(Color color, IconData icon, String label) {
     return Padding(
       padding: const EdgeInsets.symmetric(vertical: 3),
@@ -555,13 +641,14 @@ class _MapScreenState extends State<MapScreen> {
         children: [
           Container(
             width: 28, height: 28,
-            decoration: BoxDecoration(
-                color: color, shape: BoxShape.circle),
+            decoration:
+                BoxDecoration(color: color, shape: BoxShape.circle),
             child: Icon(icon, color: Colors.white, size: 14),
           ),
           const SizedBox(width: 8),
           Text(label,
-              style: const TextStyle(fontSize: 12, color: Colors.black87)),
+              style: const TextStyle(
+                  fontSize: 12, color: Colors.black87)),
         ],
       ),
     );
