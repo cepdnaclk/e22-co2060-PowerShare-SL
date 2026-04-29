@@ -179,4 +179,40 @@ class ApiService {
       return [];
     }
   }
+  // Host earnings fetch
+  static Future<Map<String, dynamic>> getHostEarnings() async {
+    try {
+      final response = await http.get(
+        Uri.parse('$baseUrl/api/earnings/my'),
+        headers: await _authHeaders(),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
+
+  // Mock withdrawal request
+  static Future<Map<String, dynamic>> requestWithdrawal({
+    required double amount,
+    required String bankName,
+    required String accountNumber,
+    required String accountName,
+  }) async {
+    try {
+      final response = await http.post(
+        Uri.parse('$baseUrl/api/earnings/withdraw'),
+        headers: await _authHeaders(),
+        body: jsonEncode({
+          'amount': amount,
+          'bankName': bankName,
+          'accountNumber': accountNumber,
+          'accountName': accountName,
+        }),
+      );
+      return jsonDecode(response.body);
+    } catch (e) {
+      return {'success': false, 'message': 'Network error: $e'};
+    }
+  }
 }
