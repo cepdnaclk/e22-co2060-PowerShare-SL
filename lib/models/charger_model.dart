@@ -4,7 +4,9 @@ class ChargerModel {
   final String address;
   final double latitude;
   final double longitude;
-  final double pricePerHour;
+  final double pricePerKwh;
+  final double powerKw;
+  final String chargerType;
   final bool isAvailable;
   final String ownerName;
   final double rating;
@@ -15,13 +17,14 @@ class ChargerModel {
     required this.address,
     required this.latitude,
     required this.longitude,
-    required this.pricePerHour,
+    required this.pricePerKwh,
+    required this.powerKw,
+    required this.chargerType,
     required this.isAvailable,
     required this.ownerName,
     required this.rating,
   });
 
-  // ✅ FIX: Backend JSON → ChargerModel
   factory ChargerModel.fromJson(Map<String, dynamic> json) {
     return ChargerModel(
       id: json['_id']?.toString() ?? '',
@@ -29,24 +32,21 @@ class ChargerModel {
       address: json['address'] ?? '',
       latitude: (json['latitude'] as num).toDouble(),
       longitude: (json['longitude'] as num).toDouble(),
-      pricePerHour: (json['pricePerHour'] as num).toDouble(),
+      pricePerKwh: (json['pricePerKwh'] as num?)?.toDouble() ??
+          (json['pricePerHour'] as num?)?.toDouble() ?? 0.0,
+      powerKw: (json['powerKw'] as num?)?.toDouble() ?? 3.3,
+      chargerType: json['chargerType']?.toString() ?? 'Standard',
       isAvailable: json['isAvailable'] ?? true,
       ownerName: json['ownerName'] ?? '',
       rating: (json['rating'] as num?)?.toDouble() ?? 0.0,
     );
   }
 
-  Map<String, dynamic> toJson() {
-    return {
-      '_id': id,
-      'name': name,
-      'address': address,
-      'latitude': latitude,
-      'longitude': longitude,
-      'pricePerHour': pricePerHour,
-      'isAvailable': isAvailable,
-      'ownerName': ownerName,
-      'rating': rating,
-    };
-  }
+  Map<String, dynamic> toJson() => {
+    '_id': id, 'name': name, 'address': address,
+    'latitude': latitude, 'longitude': longitude,
+    'pricePerKwh': pricePerKwh, 'powerKw': powerKw,
+    'chargerType': chargerType, 'isAvailable': isAvailable,
+    'ownerName': ownerName, 'rating': rating,
+  };
 }

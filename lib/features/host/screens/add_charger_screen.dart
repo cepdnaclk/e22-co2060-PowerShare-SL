@@ -12,7 +12,6 @@ class AddChargerScreen extends StatefulWidget {
 class _AddChargerScreenState extends State<AddChargerScreen> {
   final _formKey = GlobalKey<FormState>();
 
-  // Controllers
   final _nameController = TextEditingController();
   final _addressController = TextEditingController();
   final _priceController = TextEditingController();
@@ -24,7 +23,42 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
   bool _isSubmitting = false;
   bool _isGettingLocation = false;
 
+  // Charger type selection
+  double _selectedPowerKw = 7.4;
+
   static const Color _primary = Color(0xFF1E3A5F);
+
+  // Charger types with powerKw values
+  final List<Map<String, dynamic>> _chargerTypes = [
+    {
+      'label': 'Slow (3.3 kW)',
+      'subtitle': 'Home socket level',
+      'powerKw': 3.3,
+      'icon': Icons.power_outlined,
+      'color': Colors.orange,
+    },
+    {
+      'label': 'Standard (7.4 kW)',
+      'subtitle': 'Home charger',
+      'powerKw': 7.4,
+      'icon': Icons.ev_station,
+      'color': Colors.blue,
+    },
+    {
+      'label': 'Fast (22 kW)',
+      'subtitle': 'AC fast charger',
+      'powerKw': 22.0,
+      'icon': Icons.flash_on,
+      'color': Colors.green,
+    },
+    {
+      'label': 'Rapid (50 kW)',
+      'subtitle': 'DC rapid charger',
+      'powerKw': 50.0,
+      'icon': Icons.bolt,
+      'color': Colors.purple,
+    },
+  ];
 
   @override
   void dispose() {
@@ -37,42 +71,34 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
     super.dispose();
   }
 
-  // ── Get current GPS location ──────────────────────────────────────
   Future<void> _useMyLocation() async {
     setState(() => _isGettingLocation = true);
-
     try {
       LocationPermission permission = await Geolocator.checkPermission();
       if (permission == LocationPermission.denied) {
         permission = await Geolocator.requestPermission();
       }
-
       if (permission == LocationPermission.deniedForever) {
-        _showSnack('Location permission denied. Manually enter coordinates.', isError: true);
+        _showSnack('Location permission denied.', isError: true);
         return;
       }
-
       final Position pos = await Geolocator.getCurrentPosition(
         desiredAccuracy: LocationAccuracy.high,
       );
-
       setState(() {
         _latController.text = pos.latitude.toStringAsFixed(6);
         _lngController.text = pos.longitude.toStringAsFixed(6);
       });
-
       _showSnack('Location detected!');
     } catch (e) {
-      _showSnack('Could not get location. Enter manually.', isError: true);
+      _showSnack('Could not get location.', isError: true);
     } finally {
       setState(() => _isGettingLocation = false);
     }
   }
 
-  // ── Submit form → backend ─────────────────────────────────────────
   Future<void> _submitCharger() async {
     if (!_formKey.currentState!.validate()) return;
-
     setState(() => _isSubmitting = true);
 
     final result = await ApiService.addCharger(
@@ -80,13 +106,13 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
       address: _addressController.text.trim(),
       latitude: double.parse(_latController.text.trim()),
       longitude: double.parse(_lngController.text.trim()),
-      pricePerHour: double.parse(_priceController.text.trim()),
+      pricePerKwh: double.parse(_priceController.text.trim()),
+      powerKw: _selectedPowerKw,
       ownerName: _ownerNameController.text.trim(),
       isAvailable: _isAvailable,
     );
 
     setState(() => _isSubmitting = false);
-
     if (!mounted) return;
 
     if (result['success'] == true) {
@@ -97,12 +123,10 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
   }
 
   void _showSnack(String msg, {bool isError = false}) {
-    ScaffoldMessenger.of(context).showSnackBar(
-      SnackBar(
-        content: Text(msg),
-        backgroundColor: isError ? Colors.red : Colors.green,
-      ),
-    );
+    ScaffoldMessenger.of(context).showSnackBar(SnackBar(
+      content: Text(msg),
+      backgroundColor: isError ? Colors.red : Colors.green,
+    ));
   }
 
   void _showSuccessDialog() {
@@ -124,11 +148,12 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
         ),
         actions: [
           ElevatedButton(
-            onPressed: () => Navigator.pop(context, true), // true = refresh
+            onPressed: () => Navigator.pop(context, true),
             style: ElevatedButton.styleFrom(
               backgroundColor: _primary,
               foregroundColor: Colors.white,
-              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+              shape: RoundedRectangleBorder(
+                  borderRadius: BorderRadius.circular(10)),
             ),
             child: const Text('Done'),
           ),
@@ -139,7 +164,6 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
     });
   }
 
-  // ── UI ────────────────────────────────────────────────────────────
   @override
   Widget build(BuildContext context) {
     return Scaffold(
@@ -157,7 +181,7 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
           child: Column(
             crossAxisAlignment: CrossAxisAlignment.start,
             children: [
-              // ── Info banner ───────────────────────────────────────
+              // Info banner
               Container(
                 padding: const EdgeInsets.all(14),
                 decoration: BoxDecoration(
@@ -166,12 +190,14 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                 ),
                 child: const Row(
                   children: [
-                    Icon(Icons.info_outline, color: Color(0xFF185FA5), size: 20),
+                    Icon(Icons.info_outline,
+                        color: Color(0xFF185FA5), size: 20),
                     SizedBox(width: 10),
                     Expanded(
                       child: Text(
                         'ඔබේ charger register කළ පසු EV users-ට map-ේ පෙනෙනවා.',
-                        style: TextStyle(fontSize: 13, color: Color(0xFF0C447C)),
+                        style: TextStyle(
+                            fontSize: 13, color: Color(0xFF0C447C)),
                       ),
                     ),
                   ],
@@ -179,7 +205,7 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
               ),
               const SizedBox(height: 24),
 
-              // ── Section: Charger Info ─────────────────────────────
+              // Charger Details
               _sectionLabel('Charger Details'),
               const SizedBox(height: 12),
 
@@ -188,7 +214,8 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                 label: 'Charger Name',
                 hint: 'e.g. My Home Charger - Colombo 07',
                 icon: Icons.ev_station,
-                validator: (v) => (v == null || v.isEmpty) ? 'Name required' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Name required' : null,
               ),
               const SizedBox(height: 14),
 
@@ -197,14 +224,16 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                 label: 'Your Name',
                 hint: 'e.g. Kamal Perera',
                 icon: Icons.person,
-                validator: (v) => (v == null || v.isEmpty) ? 'Name required' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Name required' : null,
               ),
               const SizedBox(height: 14),
 
+              // Price per kWh
               _buildField(
                 controller: _priceController,
-                label: 'Price per Hour (Rs.)',
-                hint: 'e.g. 250',
+                label: 'Price per kWh (Rs.)',
+                hint: 'e.g. 50',
                 icon: Icons.attach_money,
                 keyboardType: TextInputType.number,
                 validator: (v) {
@@ -214,9 +243,102 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                   return null;
                 },
               ),
+              const SizedBox(height: 6),
+              const Text(
+                'Tip: Sri Lanka average electricity rate ≈ Rs. 40-60 per kWh',
+                style: TextStyle(fontSize: 11, color: Colors.grey),
+              ),
               const SizedBox(height: 24),
 
-              // ── Section: Location ─────────────────────────────────
+              // Charger Type / Power
+              _sectionLabel('Charger Type (Power Output)'),
+              const SizedBox(height: 12),
+
+              // Charger type selector cards
+              ...(_chargerTypes.map((type) {
+                final isSelected = _selectedPowerKw == type['powerKw'];
+                return GestureDetector(
+                  onTap: () =>
+                      setState(() => _selectedPowerKw = type['powerKw']),
+                  child: Container(
+                    margin: const EdgeInsets.only(bottom: 10),
+                    padding: const EdgeInsets.all(14),
+                    decoration: BoxDecoration(
+                      color: isSelected
+                          ? (type['color'] as Color).withOpacity(0.1)
+                          : Colors.white,
+                      border: Border.all(
+                        color: isSelected
+                            ? type['color'] as Color
+                            : Colors.grey.shade200,
+                        width: isSelected ? 2 : 1,
+                      ),
+                      borderRadius: BorderRadius.circular(12),
+                    ),
+                    child: Row(
+                      children: [
+                        Icon(type['icon'] as IconData,
+                            color: isSelected
+                                ? type['color'] as Color
+                                : Colors.grey,
+                            size: 28),
+                        const SizedBox(width: 12),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                type['label'] as String,
+                                style: TextStyle(
+                                  fontWeight: FontWeight.bold,
+                                  color: isSelected
+                                      ? type['color'] as Color
+                                      : Colors.black87,
+                                ),
+                              ),
+                              Text(
+                                type['subtitle'] as String,
+                                style: const TextStyle(
+                                    fontSize: 12, color: Colors.grey),
+                              ),
+                            ],
+                          ),
+                        ),
+                        // Estimated charge time
+                        Column(
+                          crossAxisAlignment: CrossAxisAlignment.end,
+                          children: [
+                            Text(
+                              '~${(40 / (type['powerKw'] as double)).toStringAsFixed(1)}h',
+                              style: TextStyle(
+                                fontWeight: FontWeight.bold,
+                                color: isSelected
+                                    ? type['color'] as Color
+                                    : Colors.grey,
+                              ),
+                            ),
+                            const Text('full charge',
+                                style: TextStyle(
+                                    fontSize: 10, color: Colors.grey)),
+                          ],
+                        ),
+                        const SizedBox(width: 8),
+                        Icon(
+                          isSelected
+                              ? Icons.radio_button_checked
+                              : Icons.radio_button_unchecked,
+                          color: isSelected
+                              ? type['color'] as Color
+                              : Colors.grey,
+                        ),
+                      ],
+                    ),
+                  ),
+                );
+              })),
+              const SizedBox(height: 24),
+
+              // Location
               _sectionLabel('Location'),
               const SizedBox(height: 12),
 
@@ -226,36 +348,40 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                 hint: 'e.g. 42 Galle Road, Colombo 03',
                 icon: Icons.location_on,
                 maxLines: 2,
-                validator: (v) => (v == null || v.isEmpty) ? 'Address required' : null,
+                validator: (v) =>
+                    (v == null || v.isEmpty) ? 'Address required' : null,
               ),
               const SizedBox(height: 14),
 
-              // GPS button
               SizedBox(
                 width: double.infinity,
                 child: OutlinedButton.icon(
                   onPressed: _isGettingLocation ? null : _useMyLocation,
                   icon: _isGettingLocation
                       ? const SizedBox(
-                          width: 16, height: 16,
-                          child: CircularProgressIndicator(strokeWidth: 2),
+                          width: 16,
+                          height: 16,
+                          child:
+                              CircularProgressIndicator(strokeWidth: 2),
                         )
                       : const Icon(Icons.my_location, size: 18),
                   label: Text(
-                    _isGettingLocation ? 'Getting location...' : 'Use My Current Location',
+                    _isGettingLocation
+                        ? 'Getting location...'
+                        : 'Use My Current Location',
                     style: const TextStyle(fontSize: 14),
                   ),
                   style: OutlinedButton.styleFrom(
                     foregroundColor: _primary,
                     side: const BorderSide(color: Color(0xFF1E3A5F)),
                     padding: const EdgeInsets.symmetric(vertical: 12),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(10)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(10)),
                   ),
                 ),
               ),
               const SizedBox(height: 14),
 
-              // Lat / Lng row
               Row(
                 children: [
                   Expanded(
@@ -264,7 +390,8 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                       label: 'Latitude',
                       hint: '6.9271',
                       icon: Icons.pin_drop,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Required';
                         final d = double.tryParse(v);
@@ -281,7 +408,8 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                       label: 'Longitude',
                       hint: '79.8612',
                       icon: Icons.pin_drop,
-                      keyboardType: const TextInputType.numberWithOptions(decimal: true, signed: true),
+                      keyboardType: const TextInputType.numberWithOptions(
+                          decimal: true, signed: true),
                       validator: (v) {
                         if (v == null || v.isEmpty) return 'Required';
                         final d = double.tryParse(v);
@@ -293,14 +421,9 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                   ),
                 ],
               ),
-              const SizedBox(height: 6),
-              const Text(
-                'Tip: "Use My Current Location" button press කළොත් auto fill වෙනවා.',
-                style: TextStyle(fontSize: 11, color: Colors.grey),
-              ),
               const SizedBox(height: 24),
 
-              // ── Section: Availability ─────────────────────────────
+              // Availability
               _sectionLabel('Availability'),
               const SizedBox(height: 12),
 
@@ -335,7 +458,7 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
               ),
               const SizedBox(height: 32),
 
-              // ── Submit button ─────────────────────────────────────
+              // Submit
               SizedBox(
                 width: double.infinity,
                 child: ElevatedButton(
@@ -344,20 +467,24 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
                     backgroundColor: _primary,
                     foregroundColor: Colors.white,
                     padding: const EdgeInsets.symmetric(vertical: 16),
-                    shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
+                    shape: RoundedRectangleBorder(
+                        borderRadius: BorderRadius.circular(12)),
                     elevation: 2,
                   ),
                   child: _isSubmitting
                       ? const SizedBox(
-                          height: 22, width: 22,
-                          child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2),
+                          height: 22,
+                          width: 22,
+                          child: CircularProgressIndicator(
+                              color: Colors.white, strokeWidth: 2),
                         )
                       : const Row(
                           mainAxisAlignment: MainAxisAlignment.center,
                           children: [
                             Icon(Icons.add_location_alt, size: 20),
                             SizedBox(width: 8),
-                            Text('Register Charger', style: TextStyle(fontSize: 16)),
+                            Text('Register Charger',
+                                style: TextStyle(fontSize: 16)),
                           ],
                         ),
                 ),
@@ -370,16 +497,15 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
     );
   }
 
-  // ── Helper widgets ────────────────────────────────────────────────
   Widget _sectionLabel(String text) => Text(
-    text,
-    style: const TextStyle(
-      fontSize: 13,
-      fontWeight: FontWeight.w600,
-      color: Colors.grey,
-      letterSpacing: 0.5,
-    ),
-  );
+        text,
+        style: const TextStyle(
+          fontSize: 13,
+          fontWeight: FontWeight.w600,
+          color: Colors.grey,
+          letterSpacing: 0.5,
+        ),
+      );
 
   Widget _buildField({
     required TextEditingController controller,
@@ -398,7 +524,8 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
       decoration: InputDecoration(
         labelText: label,
         hintText: hint,
-        hintStyle: TextStyle(color: Colors.grey.shade400, fontSize: 13),
+        hintStyle:
+            TextStyle(color: Colors.grey.shade400, fontSize: 13),
         prefixIcon: Icon(icon, color: _primary, size: 20),
         filled: true,
         fillColor: Colors.white,
@@ -412,13 +539,15 @@ class _AddChargerScreenState extends State<AddChargerScreen> {
         ),
         focusedBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
-          borderSide: const BorderSide(color: Color(0xFF1E3A5F), width: 1.5),
+          borderSide:
+              const BorderSide(color: Color(0xFF1E3A5F), width: 1.5),
         ),
         errorBorder: OutlineInputBorder(
           borderRadius: BorderRadius.circular(12),
           borderSide: const BorderSide(color: Colors.red),
         ),
-        contentPadding: const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        contentPadding:
+            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
       ),
     );
   }

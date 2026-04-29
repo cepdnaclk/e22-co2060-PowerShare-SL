@@ -1,21 +1,41 @@
 const mongoose = require('mongoose');
 
 const bookingSchema = new mongoose.Schema({
-  userId: { type: String, required: true },
-  userName: { type: String, required: true },
-  userEmail: { type: String, required: true },
-  chargerId: { type: mongoose.Schema.Types.ObjectId, ref: 'Charger' },
-  chargerName: { type: String, required: true },
+  chargerId:      { type: String, required: true },
+  chargerName:    { type: String, required: true },
   chargerAddress: { type: String, required: true },
-  date: { type: String, required: true },
-  time: { type: String, required: true },
-  durationHours: { type: Number, required: true },
-  totalPrice: { type: Number, required: true },
+  userId:         { type: String, required: true },
+  userName:       { type: String },
+  userEmail:      { type: String },
+  hostId:         { type: String },
+
+  date:           { type: String, required: true },
+  time:           { type: String, required: true },
+  durationHours:  { type: Number, required: true },
+  totalPrice:     { type: Number, required: true },
+  estimatedKwh:   { type: Number, default: 0 },
+
+  // For clash detection — store as actual DateTime
+  startDateTime:  { type: Date },
+  endDateTime:    { type: Date },
+
+  // Payment & booking status
+  // pending_confirmation → confirmed / rejected
+  // cancelled → refunded
   status: {
     type: String,
-    enum: ['pending', 'confirmed', 'cancelled'],
-    default: 'confirmed',
+    enum: ['pending_confirmation', 'confirmed', 'rejected', 'cancelled', 'completed'],
+    default: 'pending_confirmation',
   },
+
+  // Payment tracking
+  paymentStatus: {
+    type: String,
+    enum: ['held', 'released', 'refunded'],
+    default: 'held',
+  },
+  paymentMethod:  { type: String, default: 'card' },
+
   createdAt: { type: Date, default: Date.now },
 });
 

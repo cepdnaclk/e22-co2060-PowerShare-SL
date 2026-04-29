@@ -13,12 +13,16 @@ class BookingScreen extends StatefulWidget {
 class _BookingScreenState extends State<BookingScreen> {
   DateTime _selectedDate = DateTime.now();
   TimeOfDay _selectedTime = TimeOfDay.now();
-  int _durationHours = 1;
+  double _durationHours = 1.0;
 
-  double get _totalPrice => widget.charger.pricePerHour * _durationHours;
+  // kWh calculation: powerKw × hours
+  double get _estimatedKwh => widget.charger.powerKw * _durationHours;
+  double get _totalPrice => _estimatedKwh * widget.charger.pricePerKwh;
+  double get _platformFee => _totalPrice * 0.05;
+  double get _grandTotal => _totalPrice + _platformFee;
 
   Future<void> _pickDate() async {
-    final DateTime? picked = await showDatePicker(
+    final picked = await showDatePicker(
       context: context,
       initialDate: _selectedDate,
       firstDate: DateTime.now(),
@@ -28,10 +32,7 @@ class _BookingScreenState extends State<BookingScreen> {
   }
 
   Future<void> _pickTime() async {
-    final TimeOfDay? picked = await showTimePicker(
-      context: context,
-      initialTime: _selectedTime,
-    );
+    final picked = await showTimePicker(context: context, initialTime: _selectedTime);
     if (picked != null) setState(() => _selectedTime = picked);
   }
 
@@ -48,56 +49,36 @@ class _BookingScreenState extends State<BookingScreen> {
         child: Column(
           crossAxisAlignment: CrossAxisAlignment.start,
           children: [
+            // Charger info card
             Card(
               elevation: 4,
-              shape: RoundedRectangleBorder(
-                  borderRadius: BorderRadius.circular(12)),
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
               child: Padding(
                 padding: const EdgeInsets.all(16),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Row(
-                      children: [
-                        const Icon(Icons.ev_station,
-                            color: Color(0xFF1E3A5F), size: 28),
-                        const SizedBox(width: 8),
-                        Expanded(
-                          child: Text(
-                            widget.charger.name,
-                            style: const TextStyle(
-                                fontSize: 18,
-                                fontWeight: FontWeight.bold),
-                          ),
-                        ),
-                      ],
-                    ),
-                    const SizedBox(height: 8),
-                    Text(widget.charger.address,
-                        style: const TextStyle(color: Colors.grey)),
-                    const SizedBox(height: 8),
-                    Row(
-                      children: [
-                        const Icon(Icons.star,
-                            color: Colors.amber, size: 16),
-                        Text(' ${widget.charger.rating}'),
-                        const SizedBox(width: 16),
-                        Text(
-                          'Rs. ${widget.charger.pricePerHour.toInt()}/hr',
-                          style: const TextStyle(
-                              fontWeight: FontWeight.bold,
-                              color: Color(0xFF1E3A5F)),
-                        ),
-                      ],
-                    ),
-                  ],
-                ),
+                child: Column(crossAxisAlignment: CrossAxisAlignment.start, children: [
+                  Row(children: [
+                    const Icon(Icons.ev_station, color: Color(0xFF1E3A5F), size: 28),
+                    const SizedBox(width: 8),
+                    Expanded(child: Text(widget.charger.name,
+                        style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold))),
+                  ]),
+                  const SizedBox(height: 8),
+                  Text(widget.charger.address, style: const TextStyle(color: Colors.grey)),
+                  const SizedBox(height: 8),
+                  Row(children: [
+                    const Icon(Icons.bolt, color: Colors.orange, size: 16),
+                    Text(' ${widget.charger.powerKw} kW • ${widget.charger.chargerType}'),
+                    const SizedBox(width: 16),
+                    Text('Rs. ${widget.charger.pricePerKwh.toInt()}/kWh',
+                        style: const TextStyle(fontWeight: FontWeight.bold, color: Color(0xFF1E3A5F))),
+                  ]),
+                ]),
               ),
             ),
             const SizedBox(height: 24),
-            const Text('Select Date',
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+
+            // Date
+            const Text('Select Date', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickDate,
@@ -107,23 +88,18 @@ class _BookingScreenState extends State<BookingScreen> {
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.calendar_today,
-                        color: Color(0xFF1E3A5F)),
-                    const SizedBox(width: 12),
-                    Text(
-                      '${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
+                child: Row(children: [
+                  const Icon(Icons.calendar_today, color: Color(0xFF1E3A5F)),
+                  const SizedBox(width: 12),
+                  Text('${_selectedDate.day}/${_selectedDate.month}/${_selectedDate.year}',
+                      style: const TextStyle(fontSize: 16)),
+                ]),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Select Time',
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+
+            // Time
+            const Text('Select Time', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             GestureDetector(
               onTap: _pickTime,
@@ -133,23 +109,17 @@ class _BookingScreenState extends State<BookingScreen> {
                   border: Border.all(color: Colors.grey.shade300),
                   borderRadius: BorderRadius.circular(12),
                 ),
-                child: Row(
-                  children: [
-                    const Icon(Icons.access_time,
-                        color: Color(0xFF1E3A5F)),
-                    const SizedBox(width: 12),
-                    Text(
-                      _selectedTime.format(context),
-                      style: const TextStyle(fontSize: 16),
-                    ),
-                  ],
-                ),
+                child: Row(children: [
+                  const Icon(Icons.access_time, color: Color(0xFF1E3A5F)),
+                  const SizedBox(width: 12),
+                  Text(_selectedTime.format(context), style: const TextStyle(fontSize: 16)),
+                ]),
               ),
             ),
             const SizedBox(height: 16),
-            const Text('Duration (Hours)',
-                style: TextStyle(
-                    fontSize: 16, fontWeight: FontWeight.bold)),
+
+            // Duration
+            const Text('Duration (Hours)', style: TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
             const SizedBox(height: 8),
             Container(
               padding: const EdgeInsets.all(8),
@@ -157,110 +127,80 @@ class _BookingScreenState extends State<BookingScreen> {
                 border: Border.all(color: Colors.grey.shade300),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  IconButton(
-                    onPressed: _durationHours > 1
-                        ? () => setState(() => _durationHours--)
-                        : null,
-                    icon: const Icon(Icons.remove_circle_outline),
-                    color: const Color(0xFF1E3A5F),
-                  ),
-                  Text(
-                    '$_durationHours hr${_durationHours > 1 ? 's' : ''}',
-                    style: const TextStyle(
-                        fontSize: 20, fontWeight: FontWeight.bold),
-                  ),
-                  IconButton(
-                    onPressed: _durationHours < 8
-                        ? () => setState(() => _durationHours++)
-                        : null,
-                    icon: const Icon(Icons.add_circle_outline),
-                    color: const Color(0xFF1E3A5F),
-                  ),
-                ],
-              ),
+              child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+                IconButton(
+                  onPressed: _durationHours > 0.5 ? () => setState(() => _durationHours -= 0.5) : null,
+                  icon: const Icon(Icons.remove_circle_outline),
+                  color: const Color(0xFF1E3A5F),
+                ),
+                Text('${_durationHours}h', style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                IconButton(
+                  onPressed: _durationHours < 8 ? () => setState(() => _durationHours += 0.5) : null,
+                  icon: const Icon(Icons.add_circle_outline),
+                  color: const Color(0xFF1E3A5F),
+                ),
+              ]),
             ),
             const SizedBox(height: 24),
+
+            // Cost breakdown
             Container(
               padding: const EdgeInsets.all(16),
               decoration: BoxDecoration(
-                color: const Color(0xFF1E3A5F).withOpacity(0.1),
+                color: const Color(0xFF1E3A5F).withOpacity(0.07),
                 borderRadius: BorderRadius.circular(12),
               ),
-              child: Column(
-                children: [
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Rate'),
-                      Text(
-                          'Rs. ${widget.charger.pricePerHour.toInt()}/hr'),
-                    ],
-                  ),
-                  const SizedBox(height: 8),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Duration'),
-                      Text(
-                          '$_durationHours hour${_durationHours > 1 ? 's' : ''}'),
-                    ],
-                  ),
-                  const Divider(),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                    children: [
-                      const Text('Total',
-                          style:
-                              TextStyle(fontWeight: FontWeight.bold)),
-                      Text(
-                        'Rs. ${_totalPrice.toInt()}',
-                        style: const TextStyle(
-                          fontWeight: FontWeight.bold,
-                          fontSize: 18,
-                          color: Color(0xFF1E3A5F),
-                        ),
-                      ),
-                    ],
-                  ),
-                ],
-              ),
+              child: Column(children: [
+                _costRow('Power', '${widget.charger.powerKw} kW × ${_durationHours}h'),
+                _costRow('Estimated kWh', '${_estimatedKwh.toStringAsFixed(1)} kWh'),
+                _costRow('Rate', 'Rs. ${widget.charger.pricePerKwh.toInt()}/kWh'),
+                _costRow('Charging cost', 'Rs. ${_totalPrice.toStringAsFixed(0)}'),
+                _costRow('Platform fee (5%)', 'Rs. ${_platformFee.toStringAsFixed(0)}'),
+                const Divider(),
+                _costRow('Total', 'Rs. ${_grandTotal.toStringAsFixed(0)}', isTotal: true),
+              ]),
             ),
             const SizedBox(height: 24),
+
             SizedBox(
               width: double.infinity,
               child: ElevatedButton(
-                onPressed: () {
-                  Navigator.push(
-                    context,
-                    MaterialPageRoute(
-                      builder: (_) => ConfirmationScreen(
-                        charger: widget.charger,
-                        date: _selectedDate,
-                        time: _selectedTime,
-                        durationHours: _durationHours,
-                        totalPrice: _totalPrice,
-                      ),
-                    ),
-                  );
-                },
+                onPressed: () => Navigator.push(context, MaterialPageRoute(
+                  builder: (_) => ConfirmationScreen(
+                    charger: widget.charger,
+                    date: _selectedDate,
+                    time: _selectedTime,
+                    durationHours: _durationHours,        // ✅ double
+                    estimatedKwh: _estimatedKwh,           // ✅ pass kWh
+                    totalPrice: _grandTotal,
+                  ),
+                )),
                 style: ElevatedButton.styleFrom(
                   backgroundColor: const Color(0xFF1E3A5F),
                   foregroundColor: Colors.white,
                   padding: const EdgeInsets.symmetric(vertical: 16),
-                  shape: RoundedRectangleBorder(
-                    borderRadius: BorderRadius.circular(12),
-                  ),
+                  shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(12)),
                 ),
-                child: const Text('Proceed to Confirm',
-                    style: TextStyle(fontSize: 16)),
+                child: const Text('Proceed to Confirm', style: TextStyle(fontSize: 16)),
               ),
             ),
           ],
         ),
       ),
+    );
+  }
+
+  Widget _costRow(String label, String value, {bool isTotal = false}) {
+    return Padding(
+      padding: const EdgeInsets.symmetric(vertical: 4),
+      child: Row(mainAxisAlignment: MainAxisAlignment.spaceBetween, children: [
+        Text(label, style: TextStyle(color: isTotal ? Colors.black : Colors.grey,
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal)),
+        Text(value, style: TextStyle(
+            fontWeight: isTotal ? FontWeight.bold : FontWeight.normal,
+            fontSize: isTotal ? 16 : 14,
+            color: isTotal ? const Color(0xFF1E3A5F) : Colors.black87)),
+      ]),
     );
   }
 }

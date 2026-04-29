@@ -1,0 +1,396 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8">
+<meta name="viewport" content="width=device-width, initial-scale=1.0">
+<title>PowerShare SL — Admin Dashboard</title>
+<style>
+  * { margin: 0; padding: 0; box-sizing: border-box; }
+  body { font-family: 'Segoe UI', sans-serif; background: #f0f4f8; color: #1a1a2e; }
+
+  /* Login */
+  #loginPage {
+    display: flex; align-items: center; justify-content: center;
+    min-height: 100vh; background: linear-gradient(135deg, #1E3A5F, #2d6a9f);
+  }
+  .login-box {
+    background: white; border-radius: 16px; padding: 40px;
+    width: 360px; box-shadow: 0 20px 60px rgba(0,0,0,0.3);
+  }
+  .login-box h1 { color: #1E3A5F; margin-bottom: 8px; font-size: 24px; }
+  .login-box p { color: #888; margin-bottom: 28px; font-size: 14px; }
+  .login-box input {
+    width: 100%; padding: 12px 16px; border: 1.5px solid #ddd;
+    border-radius: 10px; font-size: 15px; margin-bottom: 14px; outline: none;
+  }
+  .login-box input:focus { border-color: #1E3A5F; }
+  .login-box button {
+    width: 100%; padding: 13px; background: #1E3A5F; color: white;
+    border: none; border-radius: 10px; font-size: 16px; cursor: pointer;
+    font-weight: 600; transition: background 0.2s;
+  }
+  .login-box button:hover { background: #2d5a8f; }
+  .login-error { color: red; font-size: 13px; margin-top: 8px; text-align: center; }
+
+  /* Dashboard */
+  #dashboard { display: none; }
+  .sidebar {
+    position: fixed; left: 0; top: 0; bottom: 0; width: 240px;
+    background: #1E3A5F; color: white; padding: 24px 0;
+  }
+  .sidebar-logo {
+    padding: 0 24px 24px; border-bottom: 1px solid rgba(255,255,255,0.1);
+    margin-bottom: 16px;
+  }
+  .sidebar-logo h2 { font-size: 18px; }
+  .sidebar-logo p { font-size: 11px; color: rgba(255,255,255,0.5); margin-top: 2px; }
+  .nav-item {
+    padding: 12px 24px; cursor: pointer; display: flex; align-items: center;
+    gap: 10px; font-size: 14px; transition: background 0.2s; color: rgba(255,255,255,0.8);
+  }
+  .nav-item:hover, .nav-item.active { background: rgba(255,255,255,0.15); color: white; }
+  .nav-item span { font-size: 18px; }
+
+  .main { margin-left: 240px; padding: 28px; min-height: 100vh; }
+  .page { display: none; }
+  .page.active { display: block; }
+
+  h2.page-title {
+    font-size: 22px; color: #1E3A5F; margin-bottom: 24px;
+    padding-bottom: 12px; border-bottom: 2px solid #e0e8f0;
+  }
+
+  /* Stats cards */
+  .stats-grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 16px; margin-bottom: 28px; }
+  .stat-card {
+    background: white; border-radius: 14px; padding: 20px;
+    box-shadow: 0 2px 12px rgba(0,0,0,0.06); border-left: 4px solid;
+  }
+  .stat-card .label { font-size: 12px; color: #888; margin-bottom: 6px; text-transform: uppercase; letter-spacing: 0.5px; }
+  .stat-card .value { font-size: 28px; font-weight: 700; color: #1E3A5F; }
+  .stat-card .sub { font-size: 12px; color: #aaa; margin-top: 4px; }
+
+  /* Table */
+  .table-card { background: white; border-radius: 14px; padding: 20px; box-shadow: 0 2px 12px rgba(0,0,0,0.06); overflow-x: auto; }
+  table { width: 100%; border-collapse: collapse; font-size: 14px; }
+  th { background: #f8fafc; color: #555; font-weight: 600; padding: 12px 14px; text-align: left; border-bottom: 2px solid #eee; }
+  td { padding: 12px 14px; border-bottom: 1px solid #f0f0f0; color: #333; }
+  tr:hover td { background: #fafbff; }
+  .badge {
+    display: inline-block; padding: 3px 10px; border-radius: 20px;
+    font-size: 11px; font-weight: 600;
+  }
+  .badge-green  { background: #e8f5e9; color: #2e7d32; }
+  .badge-orange { background: #fff3e0; color: #e65100; }
+  .badge-red    { background: #ffebee; color: #c62828; }
+  .badge-blue   { background: #e3f2fd; color: #1565c0; }
+  .badge-grey   { background: #f5f5f5; color: #666; }
+
+  .btn-del {
+    background: #ffebee; color: #c62828; border: none;
+    padding: 5px 12px; border-radius: 6px; cursor: pointer; font-size: 12px;
+  }
+  .btn-del:hover { background: #ffcdd2; }
+
+  .search-bar {
+    width: 100%; padding: 10px 14px; border: 1.5px solid #ddd;
+    border-radius: 10px; font-size: 14px; margin-bottom: 16px; outline: none;
+  }
+  .search-bar:focus { border-color: #1E3A5F; }
+
+  .refresh-btn {
+    background: #1E3A5F; color: white; border: none; padding: 8px 18px;
+    border-radius: 8px; cursor: pointer; font-size: 13px; margin-bottom: 16px;
+  }
+  .refresh-btn:hover { background: #2d5a8f; }
+
+  .loading { text-align: center; padding: 40px; color: #888; }
+  .error-msg { color: red; padding: 16px; background: #ffebee; border-radius: 8px; margin-bottom: 16px; }
+</style>
+</head>
+<body>
+
+<!-- LOGIN PAGE -->
+<div id="loginPage">
+  <div class="login-box">
+    <h1>⚡ PowerShare SL</h1>
+    <p>Admin Dashboard — Secure Access</p>
+    <input type="password" id="adminKey" placeholder="Enter Admin Secret Key" />
+    <button onclick="login()">Login</button>
+    <div class="login-error" id="loginError"></div>
+  </div>
+</div>
+
+<!-- DASHBOARD -->
+<div id="dashboard">
+  <div class="sidebar">
+    <div class="sidebar-logo">
+      <h2>⚡ PowerShare SL</h2>
+      <p>Admin Dashboard</p>
+    </div>
+    <div class="nav-item active" onclick="showPage('overview')"><span>📊</span> Overview</div>
+    <div class="nav-item" onclick="showPage('users')"><span>👥</span> Users</div>
+    <div class="nav-item" onclick="showPage('chargers')"><span>🔌</span> Chargers</div>
+    <div class="nav-item" onclick="showPage('bookings')"><span>📋</span> Bookings</div>
+    <div class="nav-item" onclick="logout()" style="position:absolute;bottom:20px;width:100%"><span>🚪</span> Logout</div>
+  </div>
+
+  <div class="main">
+
+    <!-- OVERVIEW -->
+    <div class="page active" id="page-overview">
+      <h2 class="page-title">📊 Overview</h2>
+      <div class="stats-grid" id="statsGrid">
+        <div class="loading">Loading stats...</div>
+      </div>
+      <div class="table-card">
+        <h3 style="margin-bottom:16px;color:#1E3A5F">Booking Status Breakdown</h3>
+        <div id="statusBreakdown"></div>
+      </div>
+    </div>
+
+    <!-- USERS -->
+    <div class="page" id="page-users">
+      <h2 class="page-title">👥 Users</h2>
+      <input class="search-bar" id="userSearch" placeholder="Search users..." oninput="filterUsers()" />
+      <button class="refresh-btn" onclick="loadUsers()">🔄 Refresh</button>
+      <div class="table-card">
+        <table id="usersTable">
+          <thead><tr><th>Name</th><th>Email</th><th>Google ID</th><th>Joined</th><th>Action</th></tr></thead>
+          <tbody id="usersBody"><tr><td colspan="5" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- CHARGERS -->
+    <div class="page" id="page-chargers">
+      <h2 class="page-title">🔌 Chargers</h2>
+      <input class="search-bar" id="chargerSearch" placeholder="Search chargers..." oninput="filterChargers()" />
+      <button class="refresh-btn" onclick="loadChargers()">🔄 Refresh</button>
+      <div class="table-card">
+        <table id="chargersTable">
+          <thead><tr><th>Name</th><th>Address</th><th>Power</th><th>Price/kWh</th><th>Status</th><th>Owner</th><th>Action</th></tr></thead>
+          <tbody id="chargersBody"><tr><td colspan="7" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+    <!-- BOOKINGS -->
+    <div class="page" id="page-bookings">
+      <h2 class="page-title">📋 Bookings</h2>
+      <input class="search-bar" id="bookingSearch" placeholder="Search bookings..." oninput="filterBookings()" />
+      <button class="refresh-btn" onclick="loadBookings()">🔄 Refresh</button>
+      <div class="table-card">
+        <table id="bookingsTable">
+          <thead><tr><th>Charger</th><th>Driver</th><th>Date</th><th>Duration</th><th>kWh</th><th>Amount</th><th>Status</th><th>Payment</th></tr></thead>
+          <tbody id="bookingsBody"><tr><td colspan="8" class="loading">Loading...</td></tr></tbody>
+        </table>
+      </div>
+    </div>
+
+  </div>
+</div>
+
+<script>
+  const API = 'https://e22-co2060-powershare-sl-production.up.railway.app';
+  let ADMIN_KEY = '';
+  let allUsers = [], allChargers = [], allBookings = [];
+
+  // ── Login ──────────────────────────────────────────────────────────
+  async function login() {
+    const key = document.getElementById('adminKey').value.trim();
+    if (!key) return;
+
+    try {
+      const res = await fetch(`${API}/api/admin/stats`, {
+        headers: { 'x-admin-key': key }
+      });
+      if (res.ok) {
+        ADMIN_KEY = key;
+        document.getElementById('loginPage').style.display = 'none';
+        document.getElementById('dashboard').style.display = 'block';
+        loadOverview();
+        loadUsers();
+        loadChargers();
+        loadBookings();
+      } else {
+        document.getElementById('loginError').textContent = 'Invalid admin key. Try again.';
+      }
+    } catch (e) {
+      document.getElementById('loginError').textContent = 'Connection error. Check server.';
+    }
+  }
+
+  // Enter key login
+  document.getElementById('adminKey').addEventListener('keydown', e => {
+    if (e.key === 'Enter') login();
+  });
+
+  function logout() {
+    ADMIN_KEY = '';
+    document.getElementById('loginPage').style.display = 'flex';
+    document.getElementById('dashboard').style.display = 'none';
+    document.getElementById('adminKey').value = '';
+  }
+
+  // ── Navigation ─────────────────────────────────────────────────────
+  function showPage(name) {
+    document.querySelectorAll('.page').forEach(p => p.classList.remove('active'));
+    document.querySelectorAll('.nav-item').forEach(n => n.classList.remove('active'));
+    document.getElementById('page-' + name).classList.add('active');
+    event.currentTarget.classList.add('active');
+  }
+
+  // ── Overview ───────────────────────────────────────────────────────
+  async function loadOverview() {
+    const res = await fetch(`${API}/api/admin/stats`, { headers: { 'x-admin-key': ADMIN_KEY } });
+    const data = await res.json();
+    if (!data.success) return;
+    const s = data.stats;
+
+    document.getElementById('statsGrid').innerHTML = `
+      <div class="stat-card" style="border-color:#1E3A5F">
+        <div class="label">Total Users</div>
+        <div class="value">${s.totalUsers}</div>
+      </div>
+      <div class="stat-card" style="border-color:#2e7d32">
+        <div class="label">Total Chargers</div>
+        <div class="value">${s.totalChargers}</div>
+      </div>
+      <div class="stat-card" style="border-color:#e65100">
+        <div class="label">Total Bookings</div>
+        <div class="value">${s.totalBookings}</div>
+      </div>
+      <div class="stat-card" style="border-color:#1565c0">
+        <div class="label">Total Revenue</div>
+        <div class="value">Rs. ${Number(s.totalRevenue).toLocaleString()}</div>
+        <div class="sub">Platform fees: Rs. ${Number(s.platformFees).toLocaleString()}</div>
+      </div>
+    `;
+
+    const sc = s.statusCounts;
+    document.getElementById('statusBreakdown').innerHTML = `
+      <table style="width:100%">
+        <tr><th>Status</th><th>Count</th></tr>
+        <tr><td><span class="badge badge-orange">Pending Confirmation</span></td><td>${sc.pending_confirmation || 0}</td></tr>
+        <tr><td><span class="badge badge-green">Confirmed</span></td><td>${sc.confirmed || 0}</td></tr>
+        <tr><td><span class="badge badge-red">Rejected</span></td><td>${sc.rejected || 0}</td></tr>
+        <tr><td><span class="badge badge-red">Cancelled</span></td><td>${sc.cancelled || 0}</td></tr>
+        <tr><td><span class="badge badge-blue">Completed</span></td><td>${sc.completed || 0}</td></tr>
+      </table>
+    `;
+  }
+
+  // ── Users ──────────────────────────────────────────────────────────
+  async function loadUsers() {
+    const res = await fetch(`${API}/api/admin/users`, { headers: { 'x-admin-key': ADMIN_KEY } });
+    const data = await res.json();
+    allUsers = data.users || [];
+    renderUsers(allUsers);
+  }
+
+  function renderUsers(users) {
+    const tbody = document.getElementById('usersBody');
+    if (!users.length) { tbody.innerHTML = '<tr><td colspan="5" class="loading">No users found</td></tr>'; return; }
+    tbody.innerHTML = users.map(u => `
+      <tr>
+        <td>${u.name || '-'}</td>
+        <td>${u.email || '-'}</td>
+        <td style="font-size:11px;color:#aaa">${u.googleId?.substring(0,12)}...</td>
+        <td>${u.createdAt ? new Date(u.createdAt).toLocaleDateString() : '-'}</td>
+        <td><button class="btn-del" onclick="deleteUser('${u._id}')">🗑 Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function filterUsers() {
+    const q = document.getElementById('userSearch').value.toLowerCase();
+    renderUsers(allUsers.filter(u => (u.name+u.email).toLowerCase().includes(q)));
+  }
+
+  async function deleteUser(id) {
+    if (!confirm('Delete this user?')) return;
+    await fetch(`${API}/api/admin/users/${id}`, { method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY } });
+    loadUsers();
+  }
+
+  // ── Chargers ───────────────────────────────────────────────────────
+  async function loadChargers() {
+    const res = await fetch(`${API}/api/admin/chargers`, { headers: { 'x-admin-key': ADMIN_KEY } });
+    const data = await res.json();
+    allChargers = data.chargers || [];
+    renderChargers(allChargers);
+  }
+
+  function renderChargers(chargers) {
+    const tbody = document.getElementById('chargersBody');
+    if (!chargers.length) { tbody.innerHTML = '<tr><td colspan="7" class="loading">No chargers</td></tr>'; return; }
+    tbody.innerHTML = chargers.map(c => `
+      <tr>
+        <td><b>${c.name}</b></td>
+        <td style="font-size:12px">${c.address}</td>
+        <td>${c.powerKw || '-'} kW</td>
+        <td>Rs. ${c.pricePerKwh || c.pricePerHour || '-'}</td>
+        <td><span class="badge ${c.isAvailable ? 'badge-green' : 'badge-red'}">${c.isAvailable ? 'Available' : 'Unavailable'}</span></td>
+        <td>${c.ownerName || '-'}</td>
+        <td><button class="btn-del" onclick="deleteCharger('${c._id}')">🗑 Delete</button></td>
+      </tr>
+    `).join('');
+  }
+
+  function filterChargers() {
+    const q = document.getElementById('chargerSearch').value.toLowerCase();
+    renderChargers(allChargers.filter(c => (c.name+c.address+c.ownerName).toLowerCase().includes(q)));
+  }
+
+  async function deleteCharger(id) {
+    if (!confirm('Delete this charger?')) return;
+    await fetch(`${API}/api/admin/chargers/${id}`, { method: 'DELETE', headers: { 'x-admin-key': ADMIN_KEY } });
+    loadChargers();
+  }
+
+  // ── Bookings ───────────────────────────────────────────────────────
+  async function loadBookings() {
+    const res = await fetch(`${API}/api/admin/bookings`, { headers: { 'x-admin-key': ADMIN_KEY } });
+    const data = await res.json();
+    allBookings = data.bookings || [];
+    renderBookings(allBookings);
+  }
+
+  function statusBadge(s) {
+    const map = {
+      confirmed: 'badge-green', pending_confirmation: 'badge-orange',
+      rejected: 'badge-red', cancelled: 'badge-red', completed: 'badge-blue'
+    };
+    return `<span class="badge ${map[s]||'badge-grey'}">${s}</span>`;
+  }
+
+  function paymentBadge(p) {
+    const map = { released: 'badge-green', refunded: 'badge-blue', held: 'badge-orange' };
+    return `<span class="badge ${map[p]||'badge-grey'}">${p||'-'}</span>`;
+  }
+
+  function renderBookings(bookings) {
+    const tbody = document.getElementById('bookingsBody');
+    if (!bookings.length) { tbody.innerHTML = '<tr><td colspan="8" class="loading">No bookings</td></tr>'; return; }
+    tbody.innerHTML = bookings.map(b => `
+      <tr>
+        <td><b>${b.chargerName||'-'}</b></td>
+        <td>${b.userName||'-'}</td>
+        <td>${b.date||'-'} ${b.time||''}</td>
+        <td>${b.durationHours||'-'}hr</td>
+        <td>${(b.estimatedKwh||0).toFixed(1)} kWh</td>
+        <td><b>Rs. ${(b.totalPrice||0).toFixed(2)}</b></td>
+        <td>${statusBadge(b.status)}</td>
+        <td>${paymentBadge(b.paymentStatus)}</td>
+      </tr>
+    `).join('');
+  }
+
+  function filterBookings() {
+    const q = document.getElementById('bookingSearch').value.toLowerCase();
+    renderBookings(allBookings.filter(b => (b.chargerName+b.userName+b.status).toLowerCase().includes(q)));
+  }
+</script>
+</body>
+</html>
