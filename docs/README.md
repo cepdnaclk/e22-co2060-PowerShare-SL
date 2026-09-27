@@ -24,9 +24,10 @@ A HTML template integrated with the given GitHub repository templates, based on 
 ---
 
 ## Team
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
--  eNumber, Name, [email](mailto:name@email.com)
+-  E/22/141, Dulanjaya Herath, [email](e22141.eng.pdn.ac.lk)
+-  E/22/142, Pubudu Herath, [email](e22142.eng.pdn.ac.lk)
+-  E/22/248, Akash Neelawathura, [email](e22248.eng.pdn.ac.lk)
+-  E/22/362, Himasha Sathsarani, [email](e22362.eng.pdn.ac.lk)
 
 <!-- Image (photo/drawing of the final hardware) should be here -->
 
@@ -44,24 +45,150 @@ A HTML template integrated with the given GitHub repository templates, based on 
 
 ## Introduction
 
-Description of the real world problem and solution, impact
+PowerShare SL is a peer-to-peer EV charging platform designed to connect electric vehicle (EV) drivers with people who provide private charging facilities.
 
+The platform addresses the limited availability of public EV charging infrastructure by allowing EV drivers to discover nearby charging stations, check availability, book charging slots, and complete the payment process.
+
+Charging hosts can register their charging stations, set charging details and prices, manage booking requests, and receive notifications. This creates a more accessible charging network while allowing existing private charging infrastructure to be utilized.
+
+The system is developed as a mobile application using Flutter, with a Node.js and Express.js backend and MongoDB Atlas for cloud data storage. Google Maps is used for location-based charger discovery, while Google Sign-In and JWT are used for authentication..
 
 ## Solution Architecture
 
-High level diagram + description
+PowerShare SL follows a client-server architecture consisting of a Flutter mobile application, Node.js/Express backend, MongoDB Atlas database, and external services.
+
+![PowerShare SL architecture diagram](images/architecture.svg)
+
+### Main Components
+
+| Component | Role | Technology |
+| --- | --- | --- |
+| Mobile application | Driver and host interface | Flutter / Dart |
+| Backend | API and business logic | Node.js / Express.js |
+| Database | Stores users, chargers, and bookings | MongoDB Atlas |
+| Authentication | Sign-in and protected API access | Google Sign-In / JWT |
+| Maps | Charger location and discovery | OpenStreetMap / flutter_map |
+| Notifications | In-app booking and status updates | Express API / MongoDB |
+| Deployment | Backend hosting | Railway |
+
+### Booking Flow
+
+The diagram shows how a driver creates a booking and how a host responds when manual approval is required.
+
+![PowerShare SL booking sequence](images/booking-sequence.svg)
 
 ## Software Designs
 
-Detailed designs with many sub-sections
+1. Frontend Design
+Flutter & Dart
+
+The mobile application follows a component-based UI structure using Flutter. The application provides separate workflows for EV drivers and charger hosts.
+
+EV Driver Interface
+
+The driver can:
+
+Sign in with Google
+Select the EV Driver role
+View charging stations on an interactive map
+Search by name or address
+Filter chargers by speed and availability
+View charger details and prices
+Select date, time, and duration
+Make a booking
+Complete the mock payment flow
+Track bookings
+Receive notifications
+
+2. Backend Design
+Node.js & Express.js
+
+The backend acts as the central communication layer between the mobile application and database.
+
+It handles:
+
+REST API requests
+Authentication
+User management
+Charging station operations
+Booking operations
+Data validation
+Notifications
+Database communication
+
+The backend is deployed using Railway, allowing the mobile application to communicate with the backend remotely.
+
+3. Database Design
+MongoDB Atlas
+
+MongoDB Atlas is used as the cloud database for storing the system's data.
+
+Main data can include:
+
+Users
+Charging stations
+Bookings
+Notifications
+Transactions
+
+Database operations include Create, Read, Update, and Delete (CRUD) operations. The project also performs MongoDB CRUD and data persistence testing.
+
+4. Authentication Design
+
+PowerShare SL uses Google Sign-In for user authentication and JWT-based authentication for backend authorization.
+
+The authentication flow can be represented as:
+
+Google Sign-In → Authentication → JWT → Protected API Requests
+
+The project initially used Firebase authentication but later migrated the backend authentication flow to Node.js with JWT.
 
 ## Testing
 
-Testing done on software : detailed + summarized results
+PowerShare SL uses several levels of testing.
+
+Unit Testing
+
+Individual components are tested separately, including:
+
+Flutter UI components
+API routes
+Schema validation
+Booking calculations
+Charger model validation
+JWT authentication middleware
+Integration Testing
+
+The interaction between system components is tested through:
+
+Flutter → Node.js API → MongoDB
+
+Testing includes:
+
+End-to-end API flows
+MongoDB CRUD operations
+Data persistence
+Google Sign-In OAuth validation
+Complete booking lifecycle
+Acceptance Testing
+
+The application is tested from the perspective of actual EV drivers and charger hosts.
+
+Testing also considers:
+
+Low-network conditions
+Multiple Android devices
+Real user workflows
+
+These testing approaches are documented in the final project presentation.
 
 ## Conclusion
 
-What was achieved, future developments, commercialization plans
+PowerShare SL provides a peer-to-peer approach to EV charging by connecting EV drivers with private charging providers.
+
+The platform combines location-based charger discovery, booking, host management, notifications, and payment functionality into a single mobile application.
+
+The implemented MVP demonstrates the integration of a Flutter frontend, Node.js backend, MongoDB Atlas database, authentication, maps, and cloud deployment into a complete working system.
 
 ## Links
 
