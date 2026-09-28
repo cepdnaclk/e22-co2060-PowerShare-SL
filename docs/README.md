@@ -70,6 +70,7 @@ PowerShare SL follows a client-server architecture consisting of a Flutter mobil
 | Notifications | In-app booking and status updates | Express API / MongoDB |
 | Deployment | Backend hosting | Railway |
 
+
 ### Booking Flow
 
 The diagram shows how a driver creates a booking and how a host responds when manual approval is required.
