@@ -1,10 +1,8 @@
 ---
 layout: home
 permalink: index.html
-
-# Please update this with your repository name and project title
-repository-name: eYY-co2060-project-template
-title: Project Template
+repository-name: e22-co2060-PowerShare-SL
+title: PowerShare SL
 ---
 
 [comment]: # "This is the standard layout for the project, but you can clean this and use your own template, and add more information required for your own project"
@@ -78,7 +76,7 @@ The diagram shows how a driver creates a booking and how a host responds when ma
 
 ## Software Designs
 
-1. Frontend Design
+### 1. Frontend Design
 Flutter & Dart
 
 The mobile application follows a component-based UI structure using Flutter. The application provides separate workflows for EV drivers and charger hosts.
@@ -87,52 +85,52 @@ EV Driver Interface
 
 The driver can:
 
-Sign in with Google
-Select the EV Driver role
-View charging stations on an interactive map
-Search by name or address
-Filter chargers by speed and availability
-View charger details and prices
-Select date, time, and duration
-Make a booking
-Complete the mock payment flow
-Track bookings
-Receive notifications
+- Sign in with Google
+- Select the EV Driver role
+- View charging stations on an interactive map
+- Search by name or address
+- Filter chargers by speed and availability
+- View charger details and prices
+- Select date, time, and duration
+- Make a booking
+- Complete the mock payment flow
+- Track bookings
+- Receive notifications
 
-2. Backend Design
+### 2. Backend Design
 Node.js & Express.js
 
 The backend acts as the central communication layer between the mobile application and database.
 
 It handles:
 
-REST API requests
-Authentication
-User management
-Charging station operations
-Booking operations
-Data validation
-Notifications
-Database communication
+- REST API requests
+- Authentication
+- User management
+- Charging station operations
+- Booking operations
+- Data validation
+- Notifications
+- Database communication
 
 The backend is deployed using Railway, allowing the mobile application to communicate with the backend remotely.
 
-3. Database Design
+### 3. Database Design
 MongoDB Atlas
 
 MongoDB Atlas is used as the cloud database for storing the system's data.
 
 Main data can include:
 
-Users
-Charging stations
-Bookings
-Notifications
-Transactions
+- Users
+- Charging stations
+- Bookings
+- Notifications
+- Transactions
 
 Database operations include Create, Read, Update, and Delete (CRUD) operations. The project also performs MongoDB CRUD and data persistence testing.
 
-4. Authentication Design
+### 4. Authentication Design
 
 PowerShare SL uses Google Sign-In for user authentication and JWT-based authentication for backend authorization.
 
@@ -150,13 +148,13 @@ Unit Testing
 
 Individual components are tested separately, including:
 
-Flutter UI components
-API routes
-Schema validation
-Booking calculations
-Charger model validation
-JWT authentication middleware
-Integration Testing
+- Flutter UI components
+- API routes
+- Schema validation
+- Booking calculations
+- Charger model validation
+- JWT authentication middleware
+- Integration Testing
 
 The interaction between system components is tested through:
 
@@ -164,20 +162,20 @@ Flutter → Node.js API → MongoDB
 
 Testing includes:
 
-End-to-end API flows
-MongoDB CRUD operations
-Data persistence
-Google Sign-In OAuth validation
-Complete booking lifecycle
-Acceptance Testing
+- End-to-end API flows
+- MongoDB CRUD operations
+- Data persistence
+- Google Sign-In OAuth validation
+- Complete booking lifecycle
+- Acceptance Testing
 
 The application is tested from the perspective of actual EV drivers and charger hosts.
 
 Testing also considers:
 
-Low-network conditions
-Multiple Android devices
-Real user workflows
+- Low-network conditions
+- Multiple Android devices
+- Real user workflows
 
 These testing approaches are documented in the final project presentation.
 
