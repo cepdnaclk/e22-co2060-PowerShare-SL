@@ -56,7 +56,7 @@ The system is developed as a mobile application using Flutter, with a Node.js an
 
 PowerShare SL follows a client-server architecture consisting of a Flutter mobile application, Node.js/Express backend, MongoDB Atlas database, and external services.
 
-![PowerShare SL architecture diagram](images/architecture.svg)
+![PowerShare SL architecture diagram](images/architecture.png)
 
 ### Main Components
 
@@ -74,7 +74,7 @@ PowerShare SL follows a client-server architecture consisting of a Flutter mobil
 
 The diagram shows how a driver creates a booking and how a host responds when manual approval is required.
 
-![PowerShare SL booking sequence](images/booking-sequence.svg)
+![PowerShare SL booking sequence](images/booking-sequence.png)
 
 ## Software Designs
 
